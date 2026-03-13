@@ -27,6 +27,7 @@ add_library(${PROJECT_NAME} SHARED
     src/hacks/autoclicker.cpp
 
     src/ui/macro_editor.cpp
+    src/ui/macro_timeline_layer.cpp
     src/ui/button_edit_layer.cpp
     src/ui/game_ui.cpp
     src/ui/record_layer.cpp

@@ -113,6 +113,8 @@ public:
 
   void toggleContinue(CCObject *);
 
+  void openTimeline(CCObject *);
+
   void toggleRender(CCObject *btn);
 
   void openPresets(CCObject *);

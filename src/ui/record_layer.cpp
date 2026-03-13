@@ -8,6 +8,7 @@
 #include "clickbot_layer.hpp"
 #include "game_ui.hpp"
 #include "macro_editor.hpp"
+#include "macro_timeline_layer.hpp"
 #include "mirror_settings_layer.hpp"
 #include "noclip_settings_layer.hpp"
 #include "pathfinder_settings_layer.hpp"
@@ -272,6 +273,11 @@ void RecordLayer::toggleContinue(CCObject *) {
   }
 
   this->onClose(nullptr);
+}
+
+void RecordLayer::openTimeline(CCObject *) {
+  this->onClose(nullptr);
+  MacroTimelineLayer::open();
 }
 
 void RecordLayer::togglePlaying(CCObject *) {
@@ -835,12 +841,21 @@ bool RecordLayer::setup() {
 
   // NakoMod: Continue Botting button
   {
+    auto timelineSprite =
+        ButtonSprite::create("Timeline", "goldFont.fnt", "GJ_button_01.png", 0.8f);
+    timelineSprite->setScale(0.5f);
+    auto timelineBtn = CCMenuItemSpriteExtra::create(
+        timelineSprite, this, menu_selector(RecordLayer::openTimeline));
+    timelineBtn->setPosition(ccp(-116.5, 54));
+    timelineBtn->setVisible(!g.macro.inputs.empty());
+    menu->addChild(timelineBtn);
+
     auto continueSprite = ButtonSprite::create("Continue", "goldFont.fnt",
                                                "GJ_button_01.png", 0.8f);
     continueSprite->setScale(0.5f);
     continueBtn = CCMenuItemSpriteExtra::create(
         continueSprite, this, menu_selector(RecordLayer::toggleContinue));
-    continueBtn->setPosition(ccp(-116.5, 54));
+    continueBtn->setPosition(ccp(-116.5, 28));
     // Only show if macro has a lastRecordedFrame
     continueBtn->setVisible(g.macro.lastRecordedFrame > 0 &&
                             !g.macro.inputs.empty());
