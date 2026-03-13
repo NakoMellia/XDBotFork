@@ -29,11 +29,15 @@ private:
   int warmupFrames = 12;
   int minActionFrame = 6;
   int minProgressForRecord = 2;
+  int minSolveFrame = 30;
   int searchWindowFrames = 120;
   int addAttempts = 0;
   int maxAddedActions = 24;
   int restartSerial = 0;
   int lastHandledDeathSerial = -1;
+  bool attemptArmed = false;
+  bool spawnCaptured = false;
+  cocos2d::CCPoint spawnPoint = {0.f, 0.f};
   std::unordered_map<std::string, int> shiftAttempts;
 
 #ifdef GEODE_IS_WINDOWS

@@ -88,6 +88,9 @@ void PathFinder::loadSettings() {
   finder.minProgressForRecord = static_cast<int>(std::clamp(
       mod->getSavedValue<int64_t>("pathfinder_min_progress_record", 2),
       int64_t(1), int64_t(240)));
+  finder.minSolveFrame = static_cast<int>(std::clamp(
+      mod->getSavedValue<int64_t>("pathfinder_min_solve_frame", 30),
+      int64_t(2), int64_t(240)));
   finder.searchWindowFrames = static_cast<int>(std::clamp(
       mod->getSavedValue<int64_t>("pathfinder_search_window", 120),
       int64_t(15), int64_t(600)));
@@ -143,6 +146,9 @@ void PathFinder::start() {
   finder.shiftAttempts.clear();
   finder.restartSerial = 0;
   finder.lastHandledDeathSerial = -1;
+  finder.attemptArmed = false;
+  finder.spawnCaptured = false;
+  finder.spawnPoint = {0.f, 0.f};
   finder.previousStopPlaying = g.stopPlaying;
   g.stopPlaying = false;
   g.currentAction = 0;
@@ -195,6 +201,31 @@ void PathFinder::onFrame(int frame) {
   auto &finder = get();
   if (!finder.running)
     return;
+
+  if (frame <= 1) {
+    finder.attemptArmed = false;
+    finder.spawnCaptured = false;
+  }
+
+  if (auto *playLayer = PlayLayer::get()) {
+    if (auto *player = playLayer->m_player1) {
+      if (!finder.spawnCaptured) {
+        finder.spawnPoint = player->getPosition();
+        finder.spawnCaptured = true;
+      }
+
+      if (!finder.attemptArmed) {
+        auto pos = player->getPosition();
+        float dx = std::abs(pos.x - finder.spawnPoint.x);
+        float dy = std::abs(pos.y - finder.spawnPoint.y);
+        bool leftSpawnZone = dx > 24.f || dy > 24.f;
+        if (leftSpawnZone || frame >= finder.minSolveFrame)
+          finder.attemptArmed = true;
+      }
+    }
+  } else if (frame >= finder.minSolveFrame) {
+    finder.attemptArmed = true;
+  }
 
   if (frame > finder.currentAttemptBest)
     finder.currentAttemptBest = frame;
@@ -283,8 +314,9 @@ void PathFinder::onDeath(int frame) {
   finder.lastHandledDeathSerial = finder.restartSerial;
   finder.currentAttemptBest = std::max(finder.currentAttemptBest, frame);
 
-  if (frame <= 1 && finder.currentAttemptBest <= 1) {
-    writeLog("INFO ", "BACKTRACK: Ignored startup reset at frame 1");
+  if (!finder.attemptArmed || finder.currentAttemptBest < finder.minSolveFrame) {
+    writeLog("INFO ",
+             fmt::format("BACKTRACK: Ignored early fail at frame {}", frame));
     finder.handlingDeath = false;
     return;
   }
@@ -389,6 +421,8 @@ void PathFinder::onDeath(int frame) {
     }
 
     pf.currentAttemptBest = 0;
+    pf.attemptArmed = false;
+    pf.spawnCaptured = false;
     Global::get().currentAction = 0;
     Global::get().currentFrameFix = 0;
     pf.restartSerial++;
