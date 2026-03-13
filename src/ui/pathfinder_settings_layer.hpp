@@ -9,9 +9,11 @@ private:
   TextInput *stepInput = nullptr;
   TextInput *shiftInput = nullptr;
   TextInput *actionsInput = nullptr;
+  TextInput *warmupInput = nullptr;
+  TextInput *startFrameInput = nullptr;
   CCMenuItemToggler *consoleToggle = nullptr;
 
-  STATIC_CREATE(PathFinderSettingsLayer, 230, 180)
+  STATIC_CREATE(PathFinderSettingsLayer, 230, 220)
 
   void textChanged(CCTextInputNode *) override {
     auto *mod = Mod::get();
@@ -21,10 +23,17 @@ private:
         geode::utils::numFromString<int>(shiftInput->getString()).unwrapOr(6);
     auto actions =
         geode::utils::numFromString<int>(actionsInput->getString()).unwrapOr(8);
+    auto warmup =
+        geode::utils::numFromString<int>(warmupInput->getString()).unwrapOr(12);
+    auto startFrame =
+        geode::utils::numFromString<int>(startFrameInput->getString()).unwrapOr(6);
 
     mod->setSavedValue("pathfinder_backtrack_step", std::clamp(step, 1, 60));
     mod->setSavedValue("pathfinder_max_shifts", std::clamp(shifts, 1, 32));
     mod->setSavedValue("pathfinder_actions_back", std::clamp(actions, 1, 64));
+    mod->setSavedValue("pathfinder_warmup_frames", std::clamp(warmup, 0, 120));
+    mod->setSavedValue("pathfinder_min_action_frame",
+                       std::clamp(startFrame, 1, 120));
     PathFinder::loadSettings();
   }
 
@@ -38,7 +47,7 @@ private:
   bool setup() {
     setTitle("Path Finder");
     m_title->setScale(0.625f);
-    m_title->setPositionY(166);
+    m_title->setPositionY(204);
 
     auto addLabel = [&](char const *text, cocos2d::CCPoint pos) {
       auto *label = CCLabelBMFont::create(text, "bigFont.fnt");
@@ -59,31 +68,43 @@ private:
       m_mainLayer->addChild(input);
     };
 
-    addLabel("Backtrack Step", {m_size.width / 2, 132});
+    addLabel("Backtrack Step", {m_size.width / 2, 176});
     addInput(stepInput, "Step",
              std::to_string(Mod::get()->getSavedValue<int64_t>(
                  "pathfinder_backtrack_step", 4)),
-             {m_size.width / 2, 112}, 2);
+             {m_size.width / 2, 156}, 2);
 
-    addLabel("Max Shifts / Action", {m_size.width / 2, 88});
+    addLabel("Max Shifts / Action", {m_size.width / 2, 132});
     addInput(shiftInput, "Shifts",
              std::to_string(
                  Mod::get()->getSavedValue<int64_t>("pathfinder_max_shifts", 6)),
-             {m_size.width / 2, 68}, 2);
+             {m_size.width / 2, 112}, 2);
 
-    addLabel("Actions Back", {m_size.width / 2, 44});
+    addLabel("Actions Back", {m_size.width / 2, 88});
     addInput(actionsInput, "Actions",
              std::to_string(
                  Mod::get()->getSavedValue<int64_t>("pathfinder_actions_back", 8)),
-             {m_size.width / 2, 24}, 2);
+             {m_size.width / 2, 68}, 2);
+
+    addLabel("Warmup Frames", {m_size.width / 2, 44});
+    addInput(warmupInput, "Warmup",
+             std::to_string(Mod::get()->getSavedValue<int64_t>(
+                 "pathfinder_warmup_frames", 12)),
+             {m_size.width / 2, 24}, 3);
+
+    addLabel("Min Action Frame", {m_size.width / 2, 0});
+    addInput(startFrameInput, "Start",
+             std::to_string(Mod::get()->getSavedValue<int64_t>(
+                 "pathfinder_min_action_frame", 6)),
+             {m_size.width / 2, -20}, 3);
 
 #ifdef GEODE_IS_WINDOWS
-    addLabel("Console Logs", {68, 152});
+    addLabel("Console Logs", {68, 196});
     consoleToggle = CCMenuItemToggler::create(
         CCSprite::createWithSpriteFrameName("GJ_checkOff_001.png"),
         CCSprite::createWithSpriteFrameName("GJ_checkOn_001.png"), this,
         menu_selector(PathFinderSettingsLayer::onToggle));
-    consoleToggle->setPosition({24, 152});
+    consoleToggle->setPosition({24, 196});
     consoleToggle->setScale(0.6f);
     consoleToggle->toggle(
         Mod::get()->getSavedValue<bool>("pathfinder_console_logs", true));

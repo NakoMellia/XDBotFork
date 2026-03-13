@@ -26,8 +26,13 @@ private:
   int backtrackStep = 4;
   int maxShiftPerAction = 6;
   int maxActionsBack = 8;
+  int warmupFrames = 12;
+  int minActionFrame = 6;
+  int minProgressForRecord = 2;
   int addAttempts = 0;
   int maxAddedActions = 24;
+  int restartSerial = 0;
+  int lastHandledDeathSerial = -1;
   std::unordered_map<std::string, int> shiftAttempts;
 
 #ifdef GEODE_IS_WINDOWS

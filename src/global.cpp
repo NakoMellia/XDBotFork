@@ -473,6 +473,9 @@ $execute {
     g.mod->setSavedValue("pathfinder_backtrack_step", 4);
     g.mod->setSavedValue("pathfinder_max_shifts", 6);
     g.mod->setSavedValue("pathfinder_actions_back", 8);
+    g.mod->setSavedValue("pathfinder_warmup_frames", 12);
+    g.mod->setSavedValue("pathfinder_min_action_frame", 6);
+    g.mod->setSavedValue("pathfinder_min_progress_record", 2);
     g.mod->setSavedValue("pathfinder_console_logs", true);
 
     g.mod->setSavedValue("menu_show_button", true);

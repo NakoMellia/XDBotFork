@@ -50,6 +50,13 @@ void insertSorted(std::vector<input> &inputs, input const &action) {
   inputs.insert(it, action);
 }
 
+bool hasExactAction(std::vector<input> const &inputs, input const &action) {
+  return std::any_of(inputs.begin(), inputs.end(), [&](input const &existing) {
+    return existing.frame == action.frame && existing.button == action.button &&
+           existing.player2 == action.player2 && existing.down == action.down;
+  });
+}
+
 bool isPrimaryCandidate(input const &action) {
   return action.button == 1 && action.down;
 }
@@ -72,6 +79,15 @@ void PathFinder::loadSettings() {
   finder.maxActionsBack = static_cast<int>(
       std::clamp(mod->getSavedValue<int64_t>("pathfinder_actions_back", 8),
                  int64_t(1), int64_t(64)));
+  finder.warmupFrames = static_cast<int>(
+      std::clamp(mod->getSavedValue<int64_t>("pathfinder_warmup_frames", 12),
+                 int64_t(0), int64_t(120)));
+  finder.minActionFrame = static_cast<int>(
+      std::clamp(mod->getSavedValue<int64_t>("pathfinder_min_action_frame", 6),
+                 int64_t(1), int64_t(120)));
+  finder.minProgressForRecord = static_cast<int>(std::clamp(
+      mod->getSavedValue<int64_t>("pathfinder_min_progress_record", 2),
+      int64_t(1), int64_t(240)));
 #ifdef GEODE_IS_WINDOWS
   finder.consoleEnabled =
       mod->getSavedValue<bool>("pathfinder_console_logs", true);
@@ -114,6 +130,8 @@ void PathFinder::start() {
   finder.currentAttemptBest = 0;
   finder.addAttempts = 0;
   finder.shiftAttempts.clear();
+  finder.restartSerial = 0;
+  finder.lastHandledDeathSerial = -1;
   finder.previousStopPlaying = g.stopPlaying;
   g.stopPlaying = false;
 
@@ -166,6 +184,9 @@ void PathFinder::onFrame(int frame) {
 
   if (frame > finder.currentAttemptBest)
     finder.currentAttemptBest = frame;
+
+  if (frame > finder.warmupFrames)
+    finder.lastHandledDeathSerial = -1;
 }
 
 void PathFinder::onLevelComplete(int frame) {
@@ -174,7 +195,8 @@ void PathFinder::onLevelComplete(int frame) {
     return;
 
   finder.currentAttemptBest = std::max(finder.currentAttemptBest, frame);
-  if (finder.currentAttemptBest > finder.bestFrame) {
+  if (finder.currentAttemptBest >= finder.minProgressForRecord &&
+      finder.currentAttemptBest > finder.bestFrame) {
     writeLog("INFO ", fmt::format("New Record! {} -> {}", finder.bestFrame,
                                    finder.currentAttemptBest));
     finder.bestFrame = finder.currentAttemptBest;
@@ -205,7 +227,8 @@ static bool pathfinderShiftCandidate(std::vector<input> &inputs,
       continue;
 
     int oldFrame = static_cast<int>(action.frame);
-    int newFrame = std::max(1, oldFrame - backtrackStep * (tryCount + 1));
+    int newFrame = std::max(PathFinder::get().minActionFrame,
+                            oldFrame - backtrackStep * (tryCount + 1));
     if (index > 0)
       newFrame = std::max(newFrame, static_cast<int>(inputs[index - 1].frame) + 1);
 
@@ -233,11 +256,15 @@ void PathFinder::onDeath(int frame) {
 
   if (!finder.running || finder.handlingDeath)
     return;
+  if (finder.lastHandledDeathSerial == finder.restartSerial)
+    return;
 
   finder.handlingDeath = true;
+  finder.lastHandledDeathSerial = finder.restartSerial;
   finder.currentAttemptBest = std::max(finder.currentAttemptBest, frame);
 
-  if (finder.currentAttemptBest > finder.bestFrame) {
+  if (finder.currentAttemptBest >= finder.minProgressForRecord &&
+      finder.currentAttemptBest > finder.bestFrame) {
     writeLog("INFO ", fmt::format("New Record! {} -> {}", finder.bestFrame,
                                    finder.currentAttemptBest));
     finder.bestFrame = finder.currentAttemptBest;
@@ -247,31 +274,59 @@ void PathFinder::onDeath(int frame) {
 
   auto &inputs = g.macro.inputs;
   bool changed = false;
+  int effectiveFrame = std::max(frame, finder.minActionFrame);
+  int frameLimit = std::max(
+      std::max(finder.bestFrame, effectiveFrame),
+      finder.currentAttemptBest <= finder.warmupFrames ? finder.warmupFrames
+                                                       : effectiveFrame);
 
   changed = pathfinderShiftCandidate(inputs, finder.shiftAttempts,
-                                     finder.bestFrame > 0 ? finder.bestFrame : frame,
+                                     frameLimit,
                                      finder.backtrackStep, finder.maxShiftPerAction,
                                      finder.maxActionsBack, isPrimaryCandidate);
 
   if (!changed)
     changed = pathfinderShiftCandidate(inputs, finder.shiftAttempts,
-                                       finder.bestFrame > 0 ? finder.bestFrame : frame,
+                                       frameLimit,
                                        finder.backtrackStep, finder.maxShiftPerAction,
                                        finder.maxActionsBack, isSecondaryCandidate);
 
   if (!changed)
-    changed = pathfinderShiftCandidate(
-        inputs, finder.shiftAttempts,
-        finder.bestFrame > 0 ? finder.bestFrame : frame, finder.backtrackStep,
-        finder.maxShiftPerAction, finder.maxActionsBack,
-        +[](input const &) { return true; });
+    changed = pathfinderShiftCandidate(inputs, finder.shiftAttempts, frameLimit,
+                                       finder.backtrackStep,
+                                       finder.maxShiftPerAction,
+                                       finder.maxActionsBack,
+                                       +[](input const &) { return true; });
 
   if (!changed) {
     if (finder.addAttempts < finder.maxAddedActions) {
-      int targetFrame =
-          std::max(1, frame - finder.backtrackStep * (finder.addAttempts + 1));
-      insertSorted(inputs, input(targetFrame, 1, false, true));
-      insertSorted(inputs, input(targetFrame + 1, 1, false, false));
+      int targetFrame = std::max(
+          finder.minActionFrame,
+          finder.currentAttemptBest <= finder.warmupFrames
+              ? finder.minActionFrame + finder.backtrackStep * finder.addAttempts
+              : frame - finder.backtrackStep * (finder.addAttempts + 1));
+      input press(targetFrame, 1, false, true);
+      input release(targetFrame + 1, 1, false, false);
+      bool inserted = false;
+      if (!hasExactAction(inputs, press)) {
+        insertSorted(inputs, press);
+        inserted = true;
+      }
+      if (!hasExactAction(inputs, release)) {
+        insertSorted(inputs, release);
+        inserted = true;
+      }
+      if (!inserted) {
+        finder.addAttempts++;
+        targetFrame = std::max(finder.minActionFrame,
+                               targetFrame + finder.backtrackStep);
+        press.frame = targetFrame;
+        release.frame = targetFrame + 1;
+        if (!hasExactAction(inputs, press))
+          insertSorted(inputs, press);
+        if (!hasExactAction(inputs, release))
+          insertSorted(inputs, release);
+      }
       finder.addAttempts++;
       writeLog("INFO ",
                fmt::format("BACKTRACK: Added action at frame {}", targetFrame));
@@ -304,6 +359,7 @@ void PathFinder::onDeath(int frame) {
     }
 
     pf.currentAttemptBest = 0;
+    pf.restartSerial++;
     pf.handlingDeath = false;
   });
 }
