@@ -72,6 +72,35 @@ void applyGhostStyle(PlayerObject *ghost) {
   ghost->setColor(ccc3(90, 255, 255));
   ghost->setZOrder(490);
 }
+
+void syncGhostGameMode(PlayerObject *ghost, PlayerData const &data) {
+  if (!ghost)
+    return;
+
+  ghost->toggleBirdMode(data.m_isBird, true);
+  ghost->toggleRollMode(data.m_isBall, true);
+  ghost->toggleDartMode(data.m_isDart, true);
+  ghost->toggleRobotMode(data.m_isRobot, true);
+  ghost->toggleSpiderMode(data.m_isSpider, true);
+  ghost->toggleSwingMode(data.m_isSwing, true);
+
+  ghost->m_isShip = data.m_isShip;
+  ghost->m_isBird = data.m_isBird;
+  ghost->m_isBall = data.m_isBall;
+  ghost->m_isDart = data.m_isDart;
+  ghost->m_isRobot = data.m_isRobot;
+  ghost->m_isSpider = data.m_isSpider;
+  ghost->m_isSwing = data.m_isSwing;
+
+  ghost->updatePlayerScale();
+  ghost->updatePlayerFrame(data.m_iconRequestID);
+  ghost->updatePlayerRobotFrame(data.m_iconRequestID);
+  ghost->updatePlayerBirdFrame(data.m_iconRequestID);
+  ghost->updatePlayerRollFrame(data.m_iconRequestID);
+  ghost->updatePlayerDartFrame(data.m_iconRequestID);
+  ghost->updatePlayerSpiderFrame(data.m_iconRequestID);
+  ghost->updatePlayerSwingFrame(data.m_iconRequestID);
+}
 } // namespace
 
 $execute {
@@ -115,6 +144,7 @@ void ShowTrajectory::updateGhost(PlayLayer *pl) {
   if (auto sampled = sampleGhostFrame(g.macro.frameFixes, frame, false)) {
     PlayerData playerData = PlayerPracticeFixes::saveData(pl->m_player1);
     PlayerPracticeFixes::applyData(t.ghostPlayer1, playerData, false, true);
+    syncGhostGameMode(t.ghostPlayer1, playerData);
     t.ghostPlayer1->setPosition(sampled->pos);
     if (sampled->rotate)
       t.ghostPlayer1->setRotation(sampled->rotation);
@@ -126,7 +156,8 @@ void ShowTrajectory::updateGhost(PlayLayer *pl) {
   if (pl->m_gameState.m_isDualMode && pl->m_player2) {
     if (auto sampled = sampleGhostFrame(g.macro.frameFixes, frame, true)) {
       PlayerData playerData = PlayerPracticeFixes::saveData(pl->m_player2);
-      PlayerPracticeFixes::applyData(t.ghostPlayer2, playerData, false, true);
+      PlayerPracticeFixes::applyData(t.ghostPlayer2, playerData, true, true);
+      syncGhostGameMode(t.ghostPlayer2, playerData);
       t.ghostPlayer2->setPosition(sampled->pos);
       if (sampled->rotate)
         t.ghostPlayer2->setRotation(sampled->rotation);
