@@ -276,6 +276,16 @@ void RecordLayer::toggleContinue(CCObject *) {
 }
 
 void RecordLayer::openTimeline(CCObject *) {
+  if (auto *pl = PlayLayer::get()) {
+    if (pl->m_isPaused)
+      if (auto *pauseLayer = Global::getPauseLayer())
+        pauseLayer->onResume(nullptr);
+
+    if (!pl->m_levelEndAnimationStarted)
+      pl->m_levelSettings->m_platformerMode ? pl->resetLevelFromStart()
+                                            : pl->resetLevel();
+  }
+
   this->onClose(nullptr);
   MacroTimelineLayer::open();
 }
