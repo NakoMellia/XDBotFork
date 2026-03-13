@@ -249,7 +249,7 @@ class $modify(BGLHook, GJBaseGameLayer) {
 
     GJBaseGameLayer::processCommands(dt, isHalfTick, isLastTick);
 
-    if (g.state == state::none)
+    if (g.state == state::none && !PathFinder::isRunning())
       return;
 
     int frame = Global::getCurrentFrame();
@@ -266,7 +266,7 @@ class $modify(BGLHook, GJBaseGameLayer) {
     if (g.state == state::recording)
       handleRecording(frame);
 
-    if (g.state == state::playing)
+    if (g.state == state::playing || PathFinder::isRunning())
       handlePlaying(Global::getCurrentFrame());
   }
 
@@ -460,11 +460,16 @@ class $modify(BGLHook, GJBaseGameLayer) {
     int frame = Global::getCurrentFrame();
     bool isRecording = (g.state == state::recording);
     bool isPlaying = (g.state == state::playing);
+    bool isPathFinding = PathFinder::isRunning();
     bool isNone = (g.state == state::none);
 
     // Initial check for ignore input during playback
-    if (isPlaying && g.mod->getSavedValue<bool>("macro_ignore_inputs") &&
+    if ((isPlaying || isPathFinding) &&
+        g.mod->getSavedValue<bool>("macro_ignore_inputs") &&
         !m_fields->macroInput)
+      return;
+
+    if (isPathFinding && !m_fields->macroInput)
       return;
 
     // Recording-specific ignore logic

@@ -113,6 +113,14 @@ void PathFinder::start() {
     return;
   }
 
+  if (g.state == state::recording) {
+    FLAlertLayer::create("PathFinder", "Stop recording before starting PathFinder.",
+                         "Ok")
+        ->show();
+    g.mod->setSavedValue("macro_pathfinder_enabled", false);
+    return;
+  }
+
   loadSettings();
 
 #ifdef GEODE_IS_WINDOWS
@@ -137,6 +145,9 @@ void PathFinder::start() {
   finder.lastHandledDeathSerial = -1;
   finder.previousStopPlaying = g.stopPlaying;
   g.stopPlaying = false;
+  g.currentAction = 0;
+  g.currentFrameFix = 0;
+  g.macro.xdBotMacro = g.macro.botInfo.name == "xdBot";
 
   writeLog("INFO ", "PathFinder started.");
   Notification::create("PathFinder started", NotificationIcon::Info)->show();
@@ -145,7 +156,7 @@ void PathFinder::start() {
     if (PauseLayer *pauseLayer = Global::getPauseLayer())
       pauseLayer->onResume(nullptr);
 
-  if (g.state != state::playing)
+  if (g.state == state::playing)
     Macro::togglePlaying();
 
   if (PlayLayer *current = PlayLayer::get()) {
@@ -378,6 +389,8 @@ void PathFinder::onDeath(int frame) {
     }
 
     pf.currentAttemptBest = 0;
+    Global::get().currentAction = 0;
+    Global::get().currentFrameFix = 0;
     pf.restartSerial++;
     pf.handlingDeath = false;
   });
