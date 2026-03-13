@@ -7,8 +7,8 @@
 namespace {
 constexpr float kBottomBarHeight = 104.f;
 constexpr float kBottomMargin = 24.f;
-constexpr float kSidePanelWidth = 230.f;
-constexpr float kSidePanelHeight = 250.f;
+constexpr float kSidePanelWidth = 178.f;
+constexpr float kSidePanelHeight = 214.f;
 constexpr float kTrackHeight = 18.f;
 
 std::string getButtonName(int button) {
@@ -49,6 +49,16 @@ bool MacroTimelineLayer::setup() {
   inputs = originalInputs;
   if (!inputs.empty())
     maxFrame = std::max(1, static_cast<int>(inputs.back().frame));
+
+  previewWasPlaying = g.state == state::playing;
+  if (g.state == state::recording)
+    Macro::resetState(true);
+  g.state = state::playing;
+  g.currentAction = 0;
+  g.currentFrameFix = 0;
+  g.macro.xdBotMacro = g.macro.botInfo.name == "xdBot";
+  Interface::updateLabels();
+  Interface::updateButtons();
 
   m_bgSprite->setOpacity(0);
   m_mainLayer->setPosition({0.f, 0.f});
@@ -123,8 +133,8 @@ bool MacroTimelineLayer::setup() {
 
   auto *sidePanel = CCScale9Sprite::create("square02b_001.png", {0, 0, 80, 80});
   sidePanel->setContentSize({kSidePanelWidth, kSidePanelHeight});
-  sidePanel->setColor({235, 235, 235});
-  sidePanel->setOpacity(235);
+  sidePanel->setColor({28, 31, 38});
+  sidePanel->setOpacity(215);
   sidePanel->setPosition(
       {winSize.width - kSidePanelWidth / 2.f - 20.f, kBottomMargin + kBottomBarHeight + kSidePanelHeight / 2.f + 14.f});
   m_mainLayer->addChild(sidePanel, 10);
@@ -142,7 +152,7 @@ bool MacroTimelineLayer::setup() {
 
   auto addButton = [&](char const *text, cocos2d::CCPoint pos,
                        cocos2d::SEL_MenuHandler callback, int tag = 0,
-                       float scale = 0.46f) {
+                       float scale = 0.32f) {
     auto *sprite = ButtonSprite::create(text);
     sprite->setScale(scale);
     auto *button = CCMenuItemSpriteExtra::create(sprite, this, callback);
@@ -155,8 +165,8 @@ bool MacroTimelineLayer::setup() {
   auto sideCenterX = sidePanel->getPositionX();
   auto sideTop = sidePanel->getPositionY() + 88.f;
 
-  auto addSideLabel = [&](char const *text, float y, float scale = 0.38f,
-                          cocos2d::ccColor3B color = ccc3(25, 25, 25)) {
+  auto addSideLabel = [&](char const *text, float y, float scale = 0.34f,
+                          cocos2d::ccColor3B color = ccc3(245, 245, 245)) {
     auto *label = CCLabelBMFont::create(text, "bigFont.fnt");
     label->setPosition({sideCenterX - 76.f, y});
     label->setAnchorPoint({0.f, 0.5f});
@@ -166,19 +176,34 @@ bool MacroTimelineLayer::setup() {
     return label;
   };
 
-  addSideLabel("Selected Input", sideTop + 20.f, 0.42f);
+  addSideLabel("Selected", sideTop + 14.f, 0.38f, ccc3(255, 211, 90));
+
+  auto addValueBox = [&](float y, CCLabelBMFont *&label) {
+    auto *bg = CCScale9Sprite::create("square02b_001.png", {0, 0, 80, 80});
+    bg->setContentSize({82.f, 28.f});
+    bg->setColor({14, 14, 18});
+    bg->setOpacity(125);
+    bg->setPosition({sideCenterX + 22.f, y});
+    m_mainLayer->addChild(bg, 13);
+
+    label = CCLabelBMFont::create("", "bigFont.fnt");
+    label->setScale(0.28f);
+    label->setPosition({sideCenterX + 22.f, y});
+    label->setColor({255, 255, 255});
+    m_mainLayer->addChild(label, 14);
+  };
 
   addSideLabel("Frame:", sideTop - 16.f);
   auto *frameBg = CCScale9Sprite::create("square02b_001.png", {0, 0, 80, 80});
-  frameBg->setContentSize({82.f, 32.f});
-  frameBg->setColor({32, 32, 32});
-  frameBg->setOpacity(100);
-  frameBg->setPosition({sideCenterX + 7.f, sideTop - 16.f});
+  frameBg->setContentSize({64.f, 28.f});
+  frameBg->setColor({14, 14, 18});
+  frameBg->setOpacity(125);
+  frameBg->setPosition({sideCenterX + 18.f, sideTop - 16.f});
   m_mainLayer->addChild(frameBg, 13);
 
   frameInput = TextInput::create(72, "Frame", "chatFont.fnt");
-  frameInput->setPosition({sideCenterX + 7.f, sideTop - 16.f});
-  frameInput->setScale(0.72f);
+  frameInput->setPosition({sideCenterX + 18.f, sideTop - 16.f});
+  frameInput->setScale(0.58f);
   frameInput->setString("0");
   frameInput->getInputNode()->setAllowedChars("0123456789");
   frameInput->getInputNode()->setMaxLabelLength(8);
@@ -188,35 +213,38 @@ bool MacroTimelineLayer::setup() {
   addSideLabel("Action:", sideTop - 72.f);
   addSideLabel("Button:", sideTop - 120.f);
   addSideLabel("Player:", sideTop - 168.f);
+  addValueBox(sideTop - 72.f, actionValueLabel);
+  addValueBox(sideTop - 120.f, buttonValueLabel);
+  addValueBox(sideTop - 168.f, playerValueLabel);
 
-  addButton("Prev", {sideCenterX - 66.f, sideTop - 210.f},
-            menu_selector(MacroTimelineLayer::onPrevInput), 0, 0.4f);
-  addButton("Next", {sideCenterX + 2.f, sideTop - 210.f},
-            menu_selector(MacroTimelineLayer::onNextInput), 0, 0.4f);
-  addButton("Save", {sideCenterX + 70.f, sideTop - 210.f},
-            menu_selector(MacroTimelineLayer::onSave), 0, 0.42f);
+  addButton("-10", {sideCenterX - 40.f, sideTop - 16.f},
+            menu_selector(MacroTimelineLayer::nudgeFrame), -10, 0.28f);
+  addButton("+10", {sideCenterX + 74.f, sideTop - 16.f},
+            menu_selector(MacroTimelineLayer::nudgeFrame), 10, 0.28f);
 
-  addButton("-10", {sideCenterX - 58.f, sideTop - 16.f},
-            menu_selector(MacroTimelineLayer::nudgeFrame), -10, 0.38f);
-  addButton("+10", {sideCenterX + 67.f, sideTop - 16.f},
-            menu_selector(MacroTimelineLayer::nudgeFrame), 10, 0.38f);
+  addButton("Swap", {sideCenterX + 75.f, sideTop - 72.f},
+            menu_selector(MacroTimelineLayer::switchAction), 0, 0.26f);
+  addButton("Cycle", {sideCenterX + 75.f, sideTop - 120.f},
+            menu_selector(MacroTimelineLayer::switchButton), 0, 0.24f);
+  addButton("Switch", {sideCenterX + 75.f, sideTop - 168.f},
+            menu_selector(MacroTimelineLayer::switchPlayer), 0, 0.23f);
 
-  addButton("Toggle", {sideCenterX + 40.f, sideTop - 72.f},
-            menu_selector(MacroTimelineLayer::switchAction), 0, 0.38f);
-  addButton("Cycle", {sideCenterX + 40.f, sideTop - 120.f},
-            menu_selector(MacroTimelineLayer::switchButton), 0, 0.38f);
-  addButton("Switch", {sideCenterX + 40.f, sideTop - 168.f},
-            menu_selector(MacroTimelineLayer::switchPlayer), 0, 0.38f);
-  addButton("Add", {sideCenterX - 45.f, sideTop - 248.f},
-            menu_selector(MacroTimelineLayer::onAddInput), 0, 0.4f);
-  addButton("Delete", {sideCenterX + 45.f, sideTop - 248.f},
-            menu_selector(MacroTimelineLayer::onDeleteInput), 0, 0.4f);
+  addButton("Prev", {sideCenterX - 46.f, sideTop - 207.f},
+            menu_selector(MacroTimelineLayer::onPrevInput), 0, 0.3f);
+  addButton("Next", {sideCenterX + 10.f, sideTop - 207.f},
+            menu_selector(MacroTimelineLayer::onNextInput), 0, 0.3f);
+  addButton("Save", {sideCenterX + 64.f, sideTop - 207.f},
+            menu_selector(MacroTimelineLayer::onSave), 0, 0.32f);
+  addButton("Add", {sideCenterX - 28.f, sideTop - 240.f},
+            menu_selector(MacroTimelineLayer::onAddInput), 0, 0.3f);
+  addButton("Delete", {sideCenterX + 48.f, sideTop - 240.f},
+            menu_selector(MacroTimelineLayer::onDeleteInput), 0, 0.3f);
 
   auto *closeSpr = CCSprite::createWithSpriteFrameName("GJ_closeBtn_001.png");
   closeSpr->setScale(0.7f);
   auto *closeBtn = CCMenuItemSpriteExtra::create(
       closeSpr, this, menu_selector(MacroTimelineLayer::onClose));
-  closeBtn->setPosition({sidePanel->getPositionX() + 92.f, sidePanel->getPositionY() + 106.f});
+  closeBtn->setPosition({sidePanel->getPositionX() + 70.f, sidePanel->getPositionY() + 87.f});
   editorMenu->addChild(closeBtn);
 
   setCurrentFrame(inputs.empty() ? 0 : static_cast<int>(inputs.front().frame));
@@ -236,6 +264,8 @@ void MacroTimelineLayer::onClose(CCObject *) {
           cocos2d::CCEGLView::sharedOpenGLView()->showCursor(cursorWasHidden ? false
                                                                              : true);
 #endif
+          if (!previewWasPlaying)
+            Macro::resetState(true);
           this->setKeypadEnabled(false);
           this->setTouchEnabled(false);
           this->removeFromParentAndCleanup(true);
@@ -246,6 +276,8 @@ void MacroTimelineLayer::onClose(CCObject *) {
   cocos2d::CCEGLView::sharedOpenGLView()->showCursor(cursorWasHidden ? false
                                                                      : true);
 #endif
+  if (!previewWasPlaying)
+    Macro::resetState(true);
   this->setKeypadEnabled(false);
   this->setTouchEnabled(false);
   this->removeFromParentAndCleanup(true);
@@ -346,42 +378,31 @@ void MacroTimelineLayer::selectNearestInput() {
 }
 
 void MacroTimelineLayer::refreshSelectedInfo() {
-  auto winSize = CCDirector::sharedDirector()->getWinSize();
-  float panelCenterX = winSize.width - kSidePanelWidth / 2.f - 20.f;
-  float panelTop = kBottomMargin + kBottomBarHeight + kSidePanelHeight / 2.f + 14.f + 88.f;
-
-  auto updateOrCreate = [&](int tag, std::string const &text, float y) {
-    CCLabelBMFont *label = m_mainLayer->getChildByTag(tag)
-                               ? typeinfo_cast<CCLabelBMFont *>(m_mainLayer->getChildByTag(tag))
-                               : nullptr;
-    if (!label) {
-      label = CCLabelBMFont::create("", "bigFont.fnt");
-      label->setAnchorPoint({0.f, 0.5f});
-      label->setScale(0.32f);
-      label->setColor({35, 35, 35});
-      label->setPosition({panelCenterX + 8.f, y});
-      m_mainLayer->addChild(label, 13, tag);
-    }
-    label->setString(text.c_str());
-  };
-
   if (selectedIndex < 0 || selectedIndex >= static_cast<int>(inputs.size())) {
     selectedLabel->setString("No input selected");
     frameInput->setString(std::to_string(currentFrame).c_str());
-    updateOrCreate(8801, "()", panelTop - 16.f);
-    updateOrCreate(8802, "()", panelTop - 72.f);
-    updateOrCreate(8803, "()", panelTop - 120.f);
-    updateOrCreate(8804, "()", panelTop - 168.f);
+    if (frameValueLabel)
+      frameValueLabel->setString("()");
+    if (actionValueLabel)
+      actionValueLabel->setString("()");
+    if (buttonValueLabel)
+      buttonValueLabel->setString("()");
+    if (playerValueLabel)
+      playerValueLabel->setString("()");
     return;
   }
 
   auto const &inp = inputs[selectedIndex];
   selectedLabel->setString(fmt::format("#{} at {}", selectedIndex + 1, inp.frame).c_str());
   frameInput->setString(std::to_string(inp.frame).c_str());
-  updateOrCreate(8801, fmt::format("{}", inp.frame), panelTop - 16.f);
-  updateOrCreate(8802, inp.down ? "Hold" : "Release", panelTop - 72.f);
-  updateOrCreate(8803, getButtonName(inp.button), panelTop - 120.f);
-  updateOrCreate(8804, inp.player2 ? "Two" : "One", panelTop - 168.f);
+  if (frameValueLabel)
+    frameValueLabel->setString(std::to_string(inp.frame).c_str());
+  if (actionValueLabel)
+    actionValueLabel->setString((inp.down ? "Hold" : "Release"));
+  if (buttonValueLabel)
+    buttonValueLabel->setString(getButtonName(inp.button).c_str());
+  if (playerValueLabel)
+    playerValueLabel->setString(inp.player2 ? "Two" : "One");
 }
 
 void MacroTimelineLayer::setCurrentFrame(int frame, bool updateSlider) {

@@ -20,6 +20,10 @@ private:
   CCLabelBMFont *frameLabel = nullptr;
   CCLabelBMFont *selectedLabel = nullptr;
   CCLabelBMFont *statusLabel = nullptr;
+  CCLabelBMFont *frameValueLabel = nullptr;
+  CCLabelBMFont *actionValueLabel = nullptr;
+  CCLabelBMFont *buttonValueLabel = nullptr;
+  CCLabelBMFont *playerValueLabel = nullptr;
 
   TextInput *frameInput = nullptr;
 
@@ -30,6 +34,7 @@ private:
   int maxFrame = 1;
   bool saved = true;
   bool cursorWasHidden = false;
+  bool previewWasPlaying = false;
 
   void rebuildMarkers();
   void setCurrentFrame(int frame, bool updateSlider = true);
