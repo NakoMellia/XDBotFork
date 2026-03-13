@@ -207,7 +207,8 @@ void PathFinder::onLevelComplete(int frame) {
 
 static bool pathfinderShiftCandidate(std::vector<input> &inputs,
                                      std::unordered_map<std::string, int> &tries,
-                                     int frameLimit, int backtrackStep,
+                                     int frameLimit, int minActionFrame,
+                                     int backtrackStep,
                                      int maxShiftPerAction, int maxActionsBack,
                                      bool (*predicate)(input const &)) {
   int considered = 0;
@@ -227,8 +228,8 @@ static bool pathfinderShiftCandidate(std::vector<input> &inputs,
       continue;
 
     int oldFrame = static_cast<int>(action.frame);
-    int newFrame = std::max(PathFinder::get().minActionFrame,
-                            oldFrame - backtrackStep * (tryCount + 1));
+    int newFrame =
+        std::max(minActionFrame, oldFrame - backtrackStep * (tryCount + 1));
     if (index > 0)
       newFrame = std::max(newFrame, static_cast<int>(inputs[index - 1].frame) + 1);
 
@@ -281,18 +282,19 @@ void PathFinder::onDeath(int frame) {
                                                        : effectiveFrame);
 
   changed = pathfinderShiftCandidate(inputs, finder.shiftAttempts,
-                                     frameLimit,
+                                     frameLimit, finder.minActionFrame,
                                      finder.backtrackStep, finder.maxShiftPerAction,
                                      finder.maxActionsBack, isPrimaryCandidate);
 
   if (!changed)
     changed = pathfinderShiftCandidate(inputs, finder.shiftAttempts,
-                                       frameLimit,
+                                       frameLimit, finder.minActionFrame,
                                        finder.backtrackStep, finder.maxShiftPerAction,
                                        finder.maxActionsBack, isSecondaryCandidate);
 
   if (!changed)
     changed = pathfinderShiftCandidate(inputs, finder.shiftAttempts, frameLimit,
+                                       finder.minActionFrame,
                                        finder.backtrackStep,
                                        finder.maxShiftPerAction,
                                        finder.maxActionsBack,
