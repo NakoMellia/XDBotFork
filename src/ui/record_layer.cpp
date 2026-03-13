@@ -65,7 +65,8 @@ const std::vector<std::vector<RecordSetting>> settings{
      {"Disable Shaders:", "disable_shaders", InputType::None},
      {"Instant Mirror Portal:", "instant_mirror_portal", InputType::None},
      {"No Mirror Portal:", "no_mirror_portal", InputType::None},
-     {"Enable Auto Saving:", "macro_auto_save", InputType::Autosave}}};
+     {"Enable Auto Saving:", "macro_auto_save", InputType::Autosave}},
+    {{"Ghost Playback:", "macro_show_ghost", InputType::None}}};
 
 class $modify(PauseLayer) {
   void customSetup() {
@@ -483,6 +484,11 @@ void RecordLayer::toggleSetting(CCObject *obj) {
     if (!value)
       ShowTrajectory::trajectoryOff();
   }
+
+  if (id == "macro_show_ghost")
+    g.ghostPlayback = value;
+  if (id == "macro_show_ghost" && !value)
+    ShowTrajectory::ghostOff();
 
   if (id == "macro_coin_finder") {
     g.coinFinder = value;

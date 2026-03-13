@@ -467,6 +467,7 @@ $execute {
     g.mod->setSavedValue("macro_auto_safe_mode", true);
     g.mod->setSavedValue("macro_speedhack_audio", true);
     g.mod->setSavedValue("macro_show_frame_label", false);
+    g.mod->setSavedValue("macro_show_ghost", false);
     g.mod->setSavedValue("macro_hide_playing_label", true);
 
     g.mod->setSavedValue("menu_show_button", true);
@@ -479,6 +480,7 @@ $execute {
   }
 
   g.showTrajectory = g.mod->getSavedValue<bool>("macro_show_trajectory");
+  g.ghostPlayback = g.mod->getSavedValue<bool>("macro_show_ghost");
   g.coinFinder = g.mod->getSavedValue<bool>("macro_coin_finder");
   g.frameStepper = g.mod->getSavedValue<bool>("macro_frame_stepper");
   g.seedEnabled = g.mod->getSavedValue<bool>("macro_seed_enabled");

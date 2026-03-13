@@ -9,7 +9,70 @@
 #include <Geode/modify/PlayLayer.hpp>
 #include <Geode/modify/PlayerObject.hpp>
 
+#include <algorithm>
+#include <optional>
+
 ShowTrajectory &t = ShowTrajectory::get();
+
+namespace {
+std::optional<gdr::FrameData> sampleGhostFrame(
+    std::vector<gdr::FrameFix> const &fixes, int frame, bool player2) {
+  if (fixes.empty())
+    return std::nullopt;
+
+  gdr::FrameFix const *previous = nullptr;
+  gdr::FrameFix const *next = nullptr;
+
+  for (auto const &fix : fixes) {
+    if (fix.frame <= frame)
+      previous = &fix;
+    if (fix.frame >= frame) {
+      next = &fix;
+      break;
+    }
+  }
+
+  if (!previous)
+    previous = &fixes.front();
+  if (!next)
+    next = &fixes.back();
+
+  auto getData = [player2](gdr::FrameFix const *fix) -> gdr::FrameData const & {
+    return player2 ? fix->p2 : fix->p1;
+  };
+
+  gdr::FrameData data = getData(previous);
+  auto const &nextData = getData(next);
+
+  if (previous == next || next->frame <= previous->frame)
+    return data;
+
+  float progress = static_cast<float>(frame - previous->frame) /
+                   static_cast<float>(next->frame - previous->frame);
+  progress = std::clamp(progress, 0.f, 1.f);
+
+  if (data.pos.x != 0.f || data.pos.y != 0.f ||
+      nextData.pos.x != 0.f || nextData.pos.y != 0.f) {
+    data.pos = ccp(data.pos.x + (nextData.pos.x - data.pos.x) * progress,
+                   data.pos.y + (nextData.pos.y - data.pos.y) * progress);
+  }
+
+  if (data.rotate && nextData.rotate)
+    data.rotation += (nextData.rotation - data.rotation) * progress;
+
+  return data;
+}
+
+void applyGhostStyle(PlayerObject *ghost) {
+  if (!ghost)
+    return;
+
+  ghost->setVisible(true);
+  ghost->setOpacity(90);
+  ghost->setColor(ccc3(90, 255, 255));
+  ghost->setZOrder(490);
+}
+} // namespace
 
 $execute {
 
@@ -27,6 +90,52 @@ void ShowTrajectory::trajectoryOff() {
   if (t.trajectoryNode()) {
     t.trajectoryNode()->clear();
     t.trajectoryNode()->setVisible(false);
+  }
+}
+
+void ShowTrajectory::ghostOff() {
+  if (t.ghostPlayer1)
+    t.ghostPlayer1->setVisible(false);
+  if (t.ghostPlayer2)
+    t.ghostPlayer2->setVisible(false);
+}
+
+void ShowTrajectory::updateGhost(PlayLayer *pl) {
+  auto &g = Global::get();
+
+  if (!pl || !t.ghostPlayer1 || !t.ghostPlayer2 || !g.ghostPlayback ||
+      g.renderer.recording || g.state == state::playing ||
+      g.macro.frameFixes.empty()) {
+    ghostOff();
+    return;
+  }
+
+  int frame = Global::getCurrentFrame();
+
+  if (auto sampled = sampleGhostFrame(g.macro.frameFixes, frame, false)) {
+    PlayerData playerData = PlayerPracticeFixes::saveData(pl->m_player1);
+    PlayerPracticeFixes::applyData(t.ghostPlayer1, playerData, false, true);
+    t.ghostPlayer1->setPosition(sampled->pos);
+    if (sampled->rotate)
+      t.ghostPlayer1->setRotation(sampled->rotation);
+    applyGhostStyle(t.ghostPlayer1);
+  } else {
+    t.ghostPlayer1->setVisible(false);
+  }
+
+  if (pl->m_gameState.m_isDualMode && pl->m_player2) {
+    if (auto sampled = sampleGhostFrame(g.macro.frameFixes, frame, true)) {
+      PlayerData playerData = PlayerPracticeFixes::saveData(pl->m_player2);
+      PlayerPracticeFixes::applyData(t.ghostPlayer2, playerData, false, true);
+      t.ghostPlayer2->setPosition(sampled->pos);
+      if (sampled->rotate)
+        t.ghostPlayer2->setRotation(sampled->rotation);
+      applyGhostStyle(t.ghostPlayer2);
+    } else {
+      t.ghostPlayer2->setVisible(false);
+    }
+  } else {
+    t.ghostPlayer2->setVisible(false);
   }
 }
 
@@ -275,6 +384,8 @@ class $modify(PlayLayer) {
     if (Global::get().showTrajectory) {
       ShowTrajectory::updateTrajectory(this);
     }
+
+    ShowTrajectory::updateGhost(this);
   }
 
   void setupHasCompleted() {
@@ -297,6 +408,18 @@ class $modify(PlayLayer) {
     t.fakePlayer2->setVisible(false);
     m_objectLayer->addChild(t.fakePlayer2);
 
+    t.ghostPlayer1 = PlayerObject::create(1, 1, this, this, true);
+    t.ghostPlayer1->retain();
+    t.ghostPlayer1->setPosition({0, 105});
+    t.ghostPlayer1->setVisible(false);
+    m_objectLayer->addChild(t.ghostPlayer1, 490);
+
+    t.ghostPlayer2 = PlayerObject::create(1, 1, this, this, true);
+    t.ghostPlayer2->retain();
+    t.ghostPlayer2->setPosition({0, 105});
+    t.ghostPlayer2->setVisible(false);
+    m_objectLayer->addChild(t.ghostPlayer2, 490);
+
     m_objectLayer->addChild(t.trajectoryNode(), 500);
   }
 
@@ -317,6 +440,8 @@ class $modify(PlayLayer) {
 
     t.fakePlayer1 = nullptr;
     t.fakePlayer2 = nullptr;
+    t.ghostPlayer1 = nullptr;
+    t.ghostPlayer2 = nullptr;
     t.cancelTrajectory = false;
     t.creatingTrajectory = false;
 
@@ -337,6 +462,8 @@ class $modify(PauseLayer) {
 
     t.fakePlayer1 = nullptr;
     t.fakePlayer2 = nullptr;
+    t.ghostPlayer1 = nullptr;
+    t.ghostPlayer2 = nullptr;
     t.cancelTrajectory = false;
     t.creatingTrajectory = false;
 

@@ -41,9 +41,13 @@ public:
 
     static void trajectoryOff();
 
+    static void ghostOff();
+
     static cocos2d::CCDrawNode* trajectoryNode();
 
     static void updateTrajectory(PlayLayer* pl);
+
+    static void updateGhost(PlayLayer* pl);
 
     static CCDrawNode* createNode();
 
@@ -61,6 +65,8 @@ public:
 
     PlayerObject* fakePlayer1 = nullptr;
     PlayerObject* fakePlayer2 = nullptr;
+    PlayerObject* ghostPlayer1 = nullptr;
+    PlayerObject* ghostPlayer2 = nullptr;
 
     bool creatingTrajectory = false;
     bool cancelTrajectory = false;

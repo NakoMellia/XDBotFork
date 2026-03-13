@@ -109,6 +109,7 @@ public:
   bool safeMode = false;
   bool layoutMode = false;
   bool showTrajectory = false;
+  bool ghostPlayback = false;
   bool coinFinder = false;
   bool frameStepper = false;
   bool speedhackEnabled = false;
