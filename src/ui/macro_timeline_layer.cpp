@@ -111,9 +111,10 @@ bool MacroTimelineLayer::setup() {
   timelineSlider->setAnchorPoint({0.f, 0.f});
   timelineSlider->setScale((winSize.width - 220.f) / 200.f);
   timelineSlider->setValue(0.f);
-  timelineSlider->setOpacity(0);
   timelineSlider->m_sliderBar->setOpacity(0);
   timelineSlider->m_touchLogic->setOpacity(0);
+  if (auto *thumb = timelineSlider->getThumb())
+    thumb->setVisible(false);
   m_mainLayer->addChild(timelineSlider, 8);
 
   markerNode = cocos2d::CCDrawNode::create();
@@ -317,10 +318,10 @@ void MacroTimelineLayer::rebuildMarkers() {
   }
 
   float playheadX = trackStartX + trackWidth * frameToRatio(currentFrame, maxFrame);
-  markerNode->drawSolidCircle({playheadX, trackY}, 26.f, 0.f, 28,
-                              ccc4f(1.f, 0.95f, 0.15f, 0.92f));
-  markerNode->drawSolidCircle({playheadX, trackY}, 18.f, 0.f, 24,
-                              ccc4f(0.92f, 0.82f, 0.1f, 0.98f));
+  markerNode->drawDot({playheadX, trackY}, 26.f,
+                      ccc4f(1.f, 0.95f, 0.15f, 0.92f));
+  markerNode->drawDot({playheadX, trackY}, 18.f,
+                      ccc4f(0.92f, 0.82f, 0.1f, 0.98f));
 }
 
 void MacroTimelineLayer::selectNearestInput() {
