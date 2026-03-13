@@ -469,6 +469,7 @@ $execute {
     g.mod->setSavedValue("macro_show_frame_label", false);
     g.mod->setSavedValue("macro_show_ghost", false);
     g.mod->setSavedValue("macro_pathfinder_enabled", false);
+    g.mod->setSavedValue("macro_pathfinder_test_enabled", false);
     g.mod->setSavedValue("macro_hide_playing_label", true);
     g.mod->setSavedValue("pathfinder_backtrack_step", 4);
     g.mod->setSavedValue("pathfinder_max_shifts", 6);
@@ -479,6 +480,10 @@ $execute {
     g.mod->setSavedValue("pathfinder_min_solve_frame", 30);
     g.mod->setSavedValue("pathfinder_search_window", 120);
     g.mod->setSavedValue("pathfinder_console_logs", true);
+    g.mod->setSavedValue("pathfinder_test_search_ahead", 20);
+    g.mod->setSavedValue("pathfinder_test_hold_frames", 2);
+    g.mod->setSavedValue("pathfinder_test_simulation_frames", 180);
+    g.mod->setSavedValue("pathfinder_test_auto_apply", true);
 
     g.mod->setSavedValue("menu_show_button", true);
     g.mod->setSavedValue("menu_pause_on_open", false);

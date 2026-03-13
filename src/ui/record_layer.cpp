@@ -2,6 +2,7 @@
 #include "../hacks/coin_finder.hpp"
 #include "../hacks/show_trajectory.hpp"
 #include "../pathfinder.hpp"
+#include "../pathfinder_test.hpp"
 #include "auto_swift_click_settings_layer.hpp"
 #include "autoclicker_settings_layer.hpp"
 #include "clickbot_layer.hpp"
@@ -10,6 +11,7 @@
 #include "mirror_settings_layer.hpp"
 #include "noclip_settings_layer.hpp"
 #include "pathfinder_settings_layer.hpp"
+#include "pathfinder_test_settings_layer.hpp"
 #include "render_presets_layer.hpp"
 #include "swift_click_settings_layer.hpp"
 #include "trajectory_settings_layer.hpp"
@@ -70,7 +72,9 @@ const std::vector<std::vector<RecordSetting>> settings{
      {"Enable Auto Saving:", "macro_auto_save", InputType::Autosave}},
     {{"Ghost Playback:", "macro_show_ghost", InputType::None},
      {"Path Finder:", "macro_pathfinder_enabled", InputType::Settings, 0.325f,
-      menu_selector(PathFinderSettingsLayer::open)}}};
+      menu_selector(PathFinderSettingsLayer::open)},
+     {"Path Finder Test:", "macro_pathfinder_test_enabled", InputType::Settings,
+      0.275f, menu_selector(PathFinderTestSettingsLayer::open)}}};
 
 class $modify(PauseLayer) {
   void customSetup() {
@@ -498,6 +502,15 @@ void RecordLayer::toggleSetting(CCObject *obj) {
       PathFinder::start();
     else
       PathFinder::stop("PathFinder disabled.");
+    if (g.layer)
+      static_cast<RecordLayer *>(g.layer)->onClose(nullptr);
+  }
+
+  if (id == "macro_pathfinder_test_enabled") {
+    if (value)
+      PathFinderTest::start();
+    else
+      PathFinderTest::stop("PathFinder Test disabled.");
     if (g.layer)
       static_cast<RecordLayer *>(g.layer)->onClose(nullptr);
   }
