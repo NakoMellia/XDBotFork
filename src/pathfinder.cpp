@@ -148,7 +148,7 @@ void PathFinder::start() {
   finder.lastHandledDeathSerial = -1;
   finder.attemptArmed = false;
   finder.spawnCaptured = false;
-  finder.spawnPoint = {0.f, 0.f};
+  finder.spawnPoint = cocos2d::CCPointZero;
   finder.previousStopPlaying = g.stopPlaying;
   g.stopPlaying = false;
   g.currentAction = 0;

@@ -37,7 +37,7 @@ private:
   int lastHandledDeathSerial = -1;
   bool attemptArmed = false;
   bool spawnCaptured = false;
-  cocos2d::CCPoint spawnPoint = {0.f, 0.f};
+  cocos2d::CCPoint spawnPoint = cocos2d::CCPointZero;
   std::unordered_map<std::string, int> shiftAttempts;
 
 #ifdef GEODE_IS_WINDOWS
