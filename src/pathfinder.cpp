@@ -264,6 +264,12 @@ void PathFinder::onDeath(int frame) {
   finder.lastHandledDeathSerial = finder.restartSerial;
   finder.currentAttemptBest = std::max(finder.currentAttemptBest, frame);
 
+  if (frame <= 1 && finder.currentAttemptBest <= 1) {
+    writeLog("INFO ", "BACKTRACK: Ignored startup reset at frame 1");
+    finder.handlingDeath = false;
+    return;
+  }
+
   if (finder.currentAttemptBest >= finder.minProgressForRecord &&
       finder.currentAttemptBest > finder.bestFrame) {
     writeLog("INFO ", fmt::format("New Record! {} -> {}", finder.bestFrame,
