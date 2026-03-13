@@ -29,6 +29,7 @@ private:
   int warmupFrames = 12;
   int minActionFrame = 6;
   int minProgressForRecord = 2;
+  int searchWindowFrames = 120;
   int addAttempts = 0;
   int maxAddedActions = 24;
   int restartSerial = 0;
