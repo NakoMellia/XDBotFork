@@ -9,6 +9,7 @@ project(xdBot2 VERSION 1.0.0)
 add_library(${PROJECT_NAME} SHARED
     src/main.cpp
     src/global.cpp
+    src/pathfinder.cpp
     src/macro.cpp
     src/keybinds.cpp
     src/utils/utils.cpp

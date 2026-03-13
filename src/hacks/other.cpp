@@ -1,4 +1,5 @@
 #include "../includes.hpp"
+#include "../pathfinder.hpp"
 #include "../ui/record_layer.hpp"
 
 #include <Geode/modify/CCScheduler.hpp>
@@ -133,16 +134,23 @@ class $modify(PlayLayer) {
     auto &g = Global::get();
 
     bool player2 = p0 == m_player2;
+    bool died = false;
 
-    if (!g.mod->getSavedValue<bool>("macro_noclip_p1") && !player2)
+    if (!g.mod->getSavedValue<bool>("macro_noclip_p1") && !player2) {
       PlayLayer::destroyPlayer(p0, p1);
-    else if (!g.mod->getSavedValue<bool>("macro_noclip_p2") && player2)
+      died = true;
+    } else if (!g.mod->getSavedValue<bool>("macro_noclip_p2") && player2) {
       PlayLayer::destroyPlayer(p0, p1);
-    else if (!g.mod->getSavedValue<bool>("macro_noclip") ||
-             m_fields->slopeFix == p1)
+      died = true;
+    } else if (!g.mod->getSavedValue<bool>("macro_noclip") ||
+               m_fields->slopeFix == p1) {
       PlayLayer::destroyPlayer(p0, p1);
-    else
+      died = true;
+    } else
       Global::get().safeMode = true;
+
+    if (died && PathFinder::isRunning())
+      PathFinder::onDeath(Global::getCurrentFrame());
 
     if (getActionByTag(16)) {
       if (Global::get().renderer.recordingAudio)
@@ -185,6 +193,8 @@ class $modify(PlayLayer) {
       g.safeMode = false;
 
     PlayLayer::levelComplete();
+
+    PathFinder::onLevelComplete(Global::getCurrentFrame());
 
     Macro::resetState(true);
 

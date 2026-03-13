@@ -1,6 +1,7 @@
 #include "includes.hpp"
 
 #include "hacks/layout_mode.hpp"
+#include "pathfinder.hpp"
 #include "practice_fixes/practice_fixes.hpp"
 #include "ui/record_layer.hpp"
 
@@ -329,6 +330,7 @@ class $modify(BGLHook, GJBaseGameLayer) {
 
   void handlePlaying(int frame) {
     auto &g = Global::get();
+    PathFinder::onFrame(frame);
     if (m_levelEndAnimationStarted)
       return;
 

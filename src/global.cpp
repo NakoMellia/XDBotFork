@@ -468,7 +468,12 @@ $execute {
     g.mod->setSavedValue("macro_speedhack_audio", true);
     g.mod->setSavedValue("macro_show_frame_label", false);
     g.mod->setSavedValue("macro_show_ghost", false);
+    g.mod->setSavedValue("macro_pathfinder_enabled", false);
     g.mod->setSavedValue("macro_hide_playing_label", true);
+    g.mod->setSavedValue("pathfinder_backtrack_step", 4);
+    g.mod->setSavedValue("pathfinder_max_shifts", 6);
+    g.mod->setSavedValue("pathfinder_actions_back", 8);
+    g.mod->setSavedValue("pathfinder_console_logs", true);
 
     g.mod->setSavedValue("menu_show_button", true);
     g.mod->setSavedValue("menu_pause_on_open", false);

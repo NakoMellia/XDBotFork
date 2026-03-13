@@ -1,6 +1,7 @@
 #include "record_layer.hpp"
 #include "../hacks/coin_finder.hpp"
 #include "../hacks/show_trajectory.hpp"
+#include "../pathfinder.hpp"
 #include "auto_swift_click_settings_layer.hpp"
 #include "autoclicker_settings_layer.hpp"
 #include "clickbot_layer.hpp"
@@ -8,6 +9,7 @@
 #include "macro_editor.hpp"
 #include "mirror_settings_layer.hpp"
 #include "noclip_settings_layer.hpp"
+#include "pathfinder_settings_layer.hpp"
 #include "render_presets_layer.hpp"
 #include "swift_click_settings_layer.hpp"
 #include "trajectory_settings_layer.hpp"
@@ -66,7 +68,9 @@ const std::vector<std::vector<RecordSetting>> settings{
      {"Instant Mirror Portal:", "instant_mirror_portal", InputType::None},
      {"No Mirror Portal:", "no_mirror_portal", InputType::None},
      {"Enable Auto Saving:", "macro_auto_save", InputType::Autosave}},
-    {{"Ghost Playback:", "macro_show_ghost", InputType::None}}};
+    {{"Ghost Playback:", "macro_show_ghost", InputType::None},
+     {"Path Finder:", "macro_pathfinder_enabled", InputType::Settings, 0.325f,
+      menu_selector(PathFinderSettingsLayer::open)}}};
 
 class $modify(PauseLayer) {
   void customSetup() {
@@ -489,6 +493,14 @@ void RecordLayer::toggleSetting(CCObject *obj) {
     g.ghostPlayback = value;
   if (id == "macro_show_ghost" && !value)
     ShowTrajectory::ghostOff();
+  if (id == "macro_pathfinder_enabled") {
+    if (value)
+      PathFinder::start();
+    else
+      PathFinder::stop("PathFinder disabled.");
+    if (g.layer)
+      static_cast<RecordLayer *>(g.layer)->onClose(nullptr);
+  }
 
   if (id == "macro_coin_finder") {
     g.coinFinder = value;
