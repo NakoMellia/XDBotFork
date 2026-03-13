@@ -424,10 +424,12 @@ void Renderer::start() {
 #ifdef GEODE_IS_MOBILE
       auto res = ffmpeg.init(settings);
       if (res.isErr()) {
-        Loader::get()->queueInMainThread([] {
-          // std::string err = res.unwrapErr();
-          FLAlertLayer::create("Error",
-                               "FFmpeg API failed to initialize: ", "Ok")
+        std::string err = res.unwrapErr();
+        Loader::get()->queueInMainThread([err] {
+          FLAlertLayer::create(
+              "Error",
+              fmt::format("FFmpeg API failed to initialize:\n{}", err).c_str(),
+              "Ok")
               ->show();
         });
 
@@ -563,8 +565,7 @@ void Renderer::start() {
 #ifdef GEODE_IS_MOBILE
       std::string file =
           audioMode == AudioMode::Song ? songFile : "fmodoutput.wav";
-      auto res =
-          ffmpeg::events::AudioMixer::mixVideoAudio(path, file, tempPath);
+      auto res = ffmpeg::AudioMixer::mixVideoAudio(path, file, tempPath);
       log::debug("XD");
       if (res.isErr()) {
         Loader::get()->queueInMainThread([] {

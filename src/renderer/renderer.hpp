@@ -1,6 +1,9 @@
 #include "../includes.hpp"
 #ifdef GEODE_IS_MOBILE
+#include "ffmpeg/audio_mixer.hpp"
 #include "ffmpeg/events.hpp"
+#include "ffmpeg/recorder.hpp"
+#include "ffmpeg/render_settings.hpp"
 #endif
 
 enum AudioMode { Off = 0, Song = 1, Record = 2 };
@@ -55,7 +58,7 @@ public:
 
   MyRenderTexture renderer;
 #ifdef GEODE_IS_MOBILE
-  ffmpeg::events::Recorder ffmpeg;
+  ffmpeg::Recorder ffmpeg;
 #endif
   std::vector<uint8_t> currentFrame;
   std::mutex lock;
