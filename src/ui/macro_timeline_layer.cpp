@@ -1,6 +1,7 @@
 #include "macro_timeline_layer.hpp"
 
 #include "macro_editor.hpp"
+#include "game_ui.hpp"
 
 #include <algorithm>
 
