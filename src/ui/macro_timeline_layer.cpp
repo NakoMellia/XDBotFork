@@ -1,17 +1,31 @@
 #include "macro_timeline_layer.hpp"
 
-#include "macro_editor.hpp"
 #include "game_ui.hpp"
+#include "macro_editor.hpp"
 
 #include <algorithm>
 
 namespace {
-constexpr float kBottomBarHeight = 104.f;
-constexpr float kBottomMargin = 24.f;
-constexpr float kSidePanelWidth = 178.f;
-constexpr float kSidePanelHeight = 214.f;
-constexpr float kTrackHeight = 18.f;
+// ── Layout constants ───────────────────────────────────────────────
+constexpr float kEdgeMargin = 28.f;
+constexpr float kBottomBarHeight = 80.f;
+constexpr float kTrackHeight = 20.f;
+constexpr float kTrackY = 36.f; // center-Y of the track inside the bottom bar
+constexpr float kSidePanelWidth = 172.f;
+constexpr float kSidePanelHeight = 220.f;
+constexpr float kInfoBarHeight = 28.f;
 
+// ── Colours (rgb) ──────────────────────────────────────────────────
+constexpr ccColor3B kPanelBg = {18, 22, 30};        // #12161E
+constexpr ccColor3B kPanelOutline = {255, 170, 35}; // #FFAA23
+constexpr ccColor3B kTrackBg = {8, 12, 18};         // #080C12
+constexpr ccColor3B kTrackFill = {58, 255, 96};     // #3AFF60
+constexpr ccColor3B kTrackGlow = {35, 255, 120};    // #23FF78
+constexpr ccColor3B kValueBoxBg = {14, 14, 18};     // #0E0E12
+constexpr ccColor3B kGold = {255, 211, 90};         // #FFD35A
+constexpr ccColor3B kInfoBarBg = {10, 14, 20};      // #0A0E14
+
+// ── Helpers ────────────────────────────────────────────────────────
 std::string getButtonName(int button) {
   if (btnNames.contains(button))
     return btnNames.at(button);
@@ -21,11 +35,14 @@ std::string getButtonName(int button) {
 float frameToRatio(int frame, int maxFrame) {
   if (maxFrame <= 0)
     return 0.f;
-  return std::clamp(static_cast<float>(frame) / static_cast<float>(maxFrame), 0.f,
-                    1.f);
+  return std::clamp(static_cast<float>(frame) / static_cast<float>(maxFrame),
+                    0.f, 1.f);
 }
 } // namespace
 
+// ════════════════════════════════════════════════════════════════════
+//  open()
+// ════════════════════════════════════════════════════════════════════
 void MacroTimelineLayer::open() {
   if (!PlayLayer::get()) {
     FLAlertLayer::create("Timeline", "Open a level first.", "Ok")->show();
@@ -37,15 +54,20 @@ void MacroTimelineLayer::open() {
   layer->show();
 }
 
+// ════════════════════════════════════════════════════════════════════
+//  setup()  —  REDESIGNED LAYOUT
+// ════════════════════════════════════════════════════════════════════
 bool MacroTimelineLayer::setup() {
   auto &g = Global::get();
   auto winSize = CCDirector::sharedDirector()->getWinSize();
 
 #ifdef GEODE_IS_WINDOWS
-  cursorWasHidden = cocos2d::CCEGLView::sharedOpenGLView()->getShouldHideCursor();
+  cursorWasHidden =
+      cocos2d::CCEGLView::sharedOpenGLView()->getShouldHideCursor();
   cocos2d::CCEGLView::sharedOpenGLView()->showCursor(true);
 #endif
 
+  // ── macro state init (unchanged) ─────────────────────────────────
   originalInputs = g.macro.inputs;
   inputs = originalInputs;
   if (!inputs.empty())
@@ -61,66 +83,83 @@ bool MacroTimelineLayer::setup() {
   Interface::updateLabels();
   Interface::updateButtons();
 
+  // ── strip default popup bg ───────────────────────────────────────
   m_bgSprite->setOpacity(0);
   m_mainLayer->setPosition({0.f, 0.f});
 
-  auto *screenDim = CCLayerColor::create({0, 0, 0, 55});
+  // ── dim overlay ──────────────────────────────────────────────────
+  auto *screenDim = CCLayerColor::create({0, 0, 0, 80});
   screenDim->setContentSize(winSize);
   screenDim->setPosition({0.f, 0.f});
   m_mainLayer->addChild(screenDim, -5);
 
-  auto *bottomPanel = CCScale9Sprite::create("square02b_001.png", {0, 0, 80, 80});
-  bottomPanel->setContentSize({winSize.width - 56.f, kBottomBarHeight});
-  bottomPanel->setColor({8, 12, 18});
-  bottomPanel->setOpacity(155);
-  bottomPanel->setPosition({winSize.width / 2.f, kBottomMargin + kBottomBarHeight / 2.f});
-  m_mainLayer->addChild(bottomPanel);
+  // ────────────────────────────────────────────────────────────────
+  //  BOTTOM TIMELINE BAR
+  // ────────────────────────────────────────────────────────────────
+  float barLeft = kEdgeMargin;
+  float barRight = winSize.width - kEdgeMargin;
+  float barWidth = barRight - barLeft;
+  float barCenterX = winSize.width / 2.f;
+  float barBottom = kEdgeMargin;
+  float barCenterY = barBottom + kBottomBarHeight / 2.f;
 
-  auto *bottomGlow =
+  // dark rounded background
+  auto *bottomPanel =
       CCScale9Sprite::create("square02b_001.png", {0, 0, 80, 80});
-  bottomGlow->setContentSize({winSize.width - 62.f, kTrackHeight + 10.f});
-  bottomGlow->setColor({35, 255, 120});
-  bottomGlow->setOpacity(70);
-  bottomGlow->setPosition(
-      {winSize.width / 2.f, kBottomMargin + 28.f});
-  m_mainLayer->addChild(bottomGlow, 2);
+  bottomPanel->setContentSize({barWidth, kBottomBarHeight});
+  bottomPanel->setColor(kTrackBg);
+  bottomPanel->setOpacity(185);
+  bottomPanel->setPosition({barCenterX, barCenterY});
+  m_mainLayer->addChild(bottomPanel, 1);
 
+  // green glow behind track
+  float trackCenterY = barBottom + kTrackY;
+  auto *trackGlow = CCScale9Sprite::create("square02b_001.png", {0, 0, 80, 80});
+  trackGlow->setContentSize({barWidth - 16.f, kTrackHeight + 12.f});
+  trackGlow->setColor(kTrackGlow);
+  trackGlow->setOpacity(55);
+  trackGlow->setPosition({barCenterX, trackCenterY});
+  m_mainLayer->addChild(trackGlow, 2);
+
+  // green track strip
+  float trackWidth = barWidth - 24.f;
+  float trackStartX = barLeft + 12.f;
   auto *track = CCScale9Sprite::create("square02b_001.png", {0, 0, 80, 80});
-  track->setContentSize({winSize.width - 72.f, kTrackHeight});
-  track->setColor({58, 255, 96});
-  track->setOpacity(230);
-  track->setPosition({winSize.width / 2.f, kBottomMargin + 28.f});
+  track->setContentSize({trackWidth, kTrackHeight});
+  track->setColor(kTrackFill);
+  track->setOpacity(210);
+  track->setPosition({barCenterX, trackCenterY});
   m_mainLayer->addChild(track, 3);
 
-  auto *panelTitle = CCLabelBMFont::create("Timeline", "goldFont.fnt");
-  panelTitle->setScale(0.55f);
-  panelTitle->setPosition({76.f, kBottomMargin + 79.f});
-  m_mainLayer->addChild(panelTitle, 6);
-
-  statusLabel = CCLabelBMFont::create("", "chatFont.fnt");
-  statusLabel->setAnchorPoint({0.f, 0.5f});
-  statusLabel->setScale(0.55f);
-  statusLabel->setOpacity(180);
-  statusLabel->setPosition({28.f, kBottomMargin + 58.f});
-  m_mainLayer->addChild(statusLabel, 6);
-
+  // ── Info labels inside bottom bar ────────────────────────────────
   frameLabel = CCLabelBMFont::create("Frame: 0", "bigFont.fnt");
   frameLabel->setAnchorPoint({0.f, 0.5f});
-  frameLabel->setScale(0.35f);
-  frameLabel->setPosition({28.f, kBottomMargin + 82.f});
+  frameLabel->setScale(0.34f);
+  frameLabel->setPosition({barLeft + 8.f, barBottom + kBottomBarHeight - 14.f});
   m_mainLayer->addChild(frameLabel, 6);
 
   selectedLabel = CCLabelBMFont::create("No input selected", "bigFont.fnt");
   selectedLabel->setAnchorPoint({0.f, 0.5f});
-  selectedLabel->setScale(0.28f);
-  selectedLabel->setPosition({148.f, kBottomMargin + 82.f});
+  selectedLabel->setScale(0.26f);
+  selectedLabel->setOpacity(200);
+  selectedLabel->setPosition(
+      {barLeft + 140.f, barBottom + kBottomBarHeight - 14.f});
   m_mainLayer->addChild(selectedLabel, 6);
 
+  statusLabel = CCLabelBMFont::create("", "chatFont.fnt");
+  statusLabel->setAnchorPoint({1.f, 0.5f});
+  statusLabel->setScale(0.5f);
+  statusLabel->setOpacity(160);
+  statusLabel->setPosition(
+      {barRight - 8.f, barBottom + kBottomBarHeight - 14.f});
+  m_mainLayer->addChild(statusLabel, 6);
+
+  // ── Timeline slider (invisible bar, drives playhead) ─────────────
   timelineSlider =
       Slider::create(this, menu_selector(MacroTimelineLayer::onSlider), 1.f);
-  timelineSlider->setPosition({30.f, kBottomMargin + 13.f});
+  timelineSlider->setPosition({trackStartX, trackCenterY});
   timelineSlider->setAnchorPoint({0.f, 0.f});
-  timelineSlider->setScale((winSize.width - 220.f) / 200.f);
+  timelineSlider->setScale(trackWidth / 200.f);
   timelineSlider->setValue(0.f);
   timelineSlider->m_sliderBar->setOpacity(0);
   timelineSlider->m_touchLogic->setOpacity(0);
@@ -128,32 +167,73 @@ bool MacroTimelineLayer::setup() {
     thumb->setVisible(false);
   m_mainLayer->addChild(timelineSlider, 8);
 
+  // ── Marker / playhead draw node ──────────────────────────────────
   markerNode = cocos2d::CCDrawNode::create();
   markerNode->setPosition({0.f, 0.f});
   m_mainLayer->addChild(markerNode, 7);
 
-  auto *sidePanel = CCScale9Sprite::create("square02b_001.png", {0, 0, 80, 80});
-  sidePanel->setContentSize({kSidePanelWidth, kSidePanelHeight});
-  sidePanel->setColor({28, 31, 38});
-  sidePanel->setOpacity(215);
-  sidePanel->setPosition(
-      {winSize.width - kSidePanelWidth / 2.f - 20.f, kBottomMargin + kBottomBarHeight + kSidePanelHeight / 2.f + 14.f});
-  m_mainLayer->addChild(sidePanel, 10);
+  // ────────────────────────────────────────────────────────────────
+  //  RIGHT SIDE EDITOR PANEL
+  // ────────────────────────────────────────────────────────────────
+  float sidePanelX = winSize.width - kSidePanelWidth / 2.f - kEdgeMargin;
+  float sidePanelY =
+      barBottom + kBottomBarHeight + 14.f + kSidePanelHeight / 2.f;
 
-  auto *sideOutline = CCScale9Sprite::create("square02b_001.png", {0, 0, 80, 80});
-  sideOutline->setContentSize({kSidePanelWidth + 6.f, kSidePanelHeight + 6.f});
-  sideOutline->setColor({255, 170, 35});
-  sideOutline->setOpacity(115);
-  sideOutline->setPosition(sidePanel->getPosition());
+  // outline (slightly bigger, orange)
+  auto *sideOutline =
+      CCScale9Sprite::create("square02b_001.png", {0, 0, 80, 80});
+  sideOutline->setContentSize({kSidePanelWidth + 5.f, kSidePanelHeight + 5.f});
+  sideOutline->setColor(kPanelOutline);
+  sideOutline->setOpacity(100);
+  sideOutline->setPosition({sidePanelX, sidePanelY});
   m_mainLayer->addChild(sideOutline, 9);
 
+  // dark panel background
+  auto *sidePanel = CCScale9Sprite::create("square02b_001.png", {0, 0, 80, 80});
+  sidePanel->setContentSize({kSidePanelWidth, kSidePanelHeight});
+  sidePanel->setColor(kPanelBg);
+  sidePanel->setOpacity(225);
+  sidePanel->setPosition({sidePanelX, sidePanelY});
+  m_mainLayer->addChild(sidePanel, 10);
+
+  // ── Editor menu (all interactive buttons go here) ────────────────
   editorMenu = CCMenu::create();
   editorMenu->setPosition({0.f, 0.f});
   m_mainLayer->addChild(editorMenu, 12);
 
+  // ── Helper lambdas ───────────────────────────────────────────────
+  auto sideCenterX = sidePanelX;
+  auto sideTop = sidePanelY + kSidePanelHeight / 2.f - 8.f;
+
+  auto addSideLabel = [&](char const *text, float y, float scale = 0.32f,
+                          cocos2d::ccColor3B color = ccc3(230, 230, 230)) {
+    auto *label = CCLabelBMFont::create(text, "bigFont.fnt");
+    label->setPosition({sideCenterX - 74.f, y});
+    label->setAnchorPoint({0.f, 0.5f});
+    label->setScale(scale);
+    label->setColor(color);
+    m_mainLayer->addChild(label, 13);
+    return label;
+  };
+
+  auto addValueBox = [&](float y, CCLabelBMFont *&label) {
+    auto *bg = CCScale9Sprite::create("square02b_001.png", {0, 0, 80, 80});
+    bg->setContentSize({78.f, 24.f});
+    bg->setColor(kValueBoxBg);
+    bg->setOpacity(140);
+    bg->setPosition({sideCenterX + 20.f, y});
+    m_mainLayer->addChild(bg, 13);
+
+    label = CCLabelBMFont::create("", "bigFont.fnt");
+    label->setScale(0.26f);
+    label->setPosition({sideCenterX + 20.f, y});
+    label->setColor({255, 255, 255});
+    m_mainLayer->addChild(label, 14);
+  };
+
   auto addButton = [&](char const *text, cocos2d::CCPoint pos,
                        cocos2d::SEL_MenuHandler callback, int tag = 0,
-                       float scale = 0.32f) {
+                       float scale = 0.30f) {
     auto *sprite = ButtonSprite::create(text);
     sprite->setScale(scale);
     auto *button = CCMenuItemSpriteExtra::create(sprite, this, callback);
@@ -163,97 +243,91 @@ bool MacroTimelineLayer::setup() {
     return button;
   };
 
-  auto sideCenterX = sidePanel->getPositionX();
-  auto sideTop = sidePanel->getPositionY() + 88.f;
+  // ── Panel contents ───────────────────────────────────────────────
+  // "Selected" header
+  addSideLabel("Selected", sideTop, 0.36f, kGold);
 
-  auto addSideLabel = [&](char const *text, float y, float scale = 0.34f,
-                          cocos2d::ccColor3B color = ccc3(245, 245, 245)) {
-    auto *label = CCLabelBMFont::create(text, "bigFont.fnt");
-    label->setPosition({sideCenterX - 76.f, y});
-    label->setAnchorPoint({0.f, 0.5f});
-    label->setScale(scale);
-    label->setColor(color);
-    m_mainLayer->addChild(label, 13);
-    return label;
-  };
+  // Frame row
+  float rowFrame = sideTop - 30.f;
+  addSideLabel("Frame:", rowFrame);
 
-  addSideLabel("Selected", sideTop + 14.f, 0.38f, ccc3(255, 211, 90));
-
-  auto addValueBox = [&](float y, CCLabelBMFont *&label) {
-    auto *bg = CCScale9Sprite::create("square02b_001.png", {0, 0, 80, 80});
-    bg->setContentSize({82.f, 28.f});
-    bg->setColor({14, 14, 18});
-    bg->setOpacity(125);
-    bg->setPosition({sideCenterX + 22.f, y});
-    m_mainLayer->addChild(bg, 13);
-
-    label = CCLabelBMFont::create("", "bigFont.fnt");
-    label->setScale(0.28f);
-    label->setPosition({sideCenterX + 22.f, y});
-    label->setColor({255, 255, 255});
-    m_mainLayer->addChild(label, 14);
-  };
-
-  addSideLabel("Frame:", sideTop - 16.f);
   auto *frameBg = CCScale9Sprite::create("square02b_001.png", {0, 0, 80, 80});
-  frameBg->setContentSize({64.f, 28.f});
-  frameBg->setColor({14, 14, 18});
-  frameBg->setOpacity(125);
-  frameBg->setPosition({sideCenterX + 18.f, sideTop - 16.f});
+  frameBg->setContentSize({60.f, 24.f});
+  frameBg->setColor(kValueBoxBg);
+  frameBg->setOpacity(140);
+  frameBg->setPosition({sideCenterX + 14.f, rowFrame});
   m_mainLayer->addChild(frameBg, 13);
 
-  frameInput = TextInput::create(72, "Frame", "chatFont.fnt");
-  frameInput->setPosition({sideCenterX + 18.f, sideTop - 16.f});
-  frameInput->setScale(0.58f);
+  frameInput = TextInput::create(68, "Frame", "chatFont.fnt");
+  frameInput->setPosition({sideCenterX + 14.f, rowFrame});
+  frameInput->setScale(0.55f);
   frameInput->setString("0");
   frameInput->getInputNode()->setAllowedChars("0123456789");
   frameInput->getInputNode()->setMaxLabelLength(8);
   frameInput->getInputNode()->setDelegate(this);
   m_mainLayer->addChild(frameInput, 14);
 
-  addSideLabel("Action:", sideTop - 72.f);
-  addSideLabel("Button:", sideTop - 120.f);
-  addSideLabel("Player:", sideTop - 168.f);
-  addValueBox(sideTop - 72.f, actionValueLabel);
-  addValueBox(sideTop - 120.f, buttonValueLabel);
-  addValueBox(sideTop - 168.f, playerValueLabel);
+  addButton("-10", {sideCenterX - 42.f, rowFrame},
+            menu_selector(MacroTimelineLayer::nudgeFrame), -10, 0.24f);
+  addButton("+10", {sideCenterX + 68.f, rowFrame},
+            menu_selector(MacroTimelineLayer::nudgeFrame), 10, 0.24f);
 
-  addButton("-10", {sideCenterX - 40.f, sideTop - 16.f},
-            menu_selector(MacroTimelineLayer::nudgeFrame), -10, 0.28f);
-  addButton("+10", {sideCenterX + 74.f, sideTop - 16.f},
-            menu_selector(MacroTimelineLayer::nudgeFrame), 10, 0.28f);
+  // Action row
+  float rowAction = rowFrame - 36.f;
+  addSideLabel("Action:", rowAction);
+  addValueBox(rowAction, actionValueLabel);
+  addButton("Swap", {sideCenterX + 68.f, rowAction},
+            menu_selector(MacroTimelineLayer::switchAction), 0, 0.24f);
 
-  addButton("Swap", {sideCenterX + 75.f, sideTop - 72.f},
-            menu_selector(MacroTimelineLayer::switchAction), 0, 0.26f);
-  addButton("Cycle", {sideCenterX + 75.f, sideTop - 120.f},
-            menu_selector(MacroTimelineLayer::switchButton), 0, 0.24f);
-  addButton("Switch", {sideCenterX + 75.f, sideTop - 168.f},
-            menu_selector(MacroTimelineLayer::switchPlayer), 0, 0.23f);
+  // Button row
+  float rowButton = rowAction - 36.f;
+  addSideLabel("Button:", rowButton);
+  addValueBox(rowButton, buttonValueLabel);
+  addButton("Cycle", {sideCenterX + 68.f, rowButton},
+            menu_selector(MacroTimelineLayer::switchButton), 0, 0.22f);
 
-  addButton("Prev", {sideCenterX - 46.f, sideTop - 207.f},
-            menu_selector(MacroTimelineLayer::onPrevInput), 0, 0.3f);
-  addButton("Next", {sideCenterX + 10.f, sideTop - 207.f},
-            menu_selector(MacroTimelineLayer::onNextInput), 0, 0.3f);
-  addButton("Save", {sideCenterX + 64.f, sideTop - 207.f},
-            menu_selector(MacroTimelineLayer::onSave), 0, 0.32f);
-  addButton("Add", {sideCenterX - 28.f, sideTop - 240.f},
-            menu_selector(MacroTimelineLayer::onAddInput), 0, 0.3f);
-  addButton("Delete", {sideCenterX + 48.f, sideTop - 240.f},
-            menu_selector(MacroTimelineLayer::onDeleteInput), 0, 0.3f);
+  // Player row
+  float rowPlayer = rowButton - 36.f;
+  addSideLabel("Player:", rowPlayer);
+  addValueBox(rowPlayer, playerValueLabel);
+  addButton("Switch", {sideCenterX + 68.f, rowPlayer},
+            menu_selector(MacroTimelineLayer::switchPlayer), 0, 0.22f);
 
+  // ── Bottom button rows ───────────────────────────────────────────
+  float btnRow1 = rowPlayer - 34.f;
+  float btnRow2 = btnRow1 - 28.f;
+
+  addButton("Prev", {sideCenterX - 48.f, btnRow1},
+            menu_selector(MacroTimelineLayer::onPrevInput), 0, 0.28f);
+  addButton("Next", {sideCenterX + 2.f, btnRow1},
+            menu_selector(MacroTimelineLayer::onNextInput), 0, 0.28f);
+  addButton("Save", {sideCenterX + 56.f, btnRow1},
+            menu_selector(MacroTimelineLayer::onSave), 0, 0.30f);
+
+  addButton("Add", {sideCenterX - 30.f, btnRow2},
+            menu_selector(MacroTimelineLayer::onAddInput), 0, 0.28f);
+  addButton("Delete", {sideCenterX + 40.f, btnRow2},
+            menu_selector(MacroTimelineLayer::onDeleteInput), 0, 0.28f);
+
+  // ── Close button ─────────────────────────────────────────────────
   auto *closeSpr = CCSprite::createWithSpriteFrameName("GJ_closeBtn_001.png");
-  closeSpr->setScale(0.7f);
+  closeSpr->setScale(0.65f);
   auto *closeBtn = CCMenuItemSpriteExtra::create(
       closeSpr, this, menu_selector(MacroTimelineLayer::onClose));
-  closeBtn->setPosition({sidePanel->getPositionX() + 70.f, sidePanel->getPositionY() + 87.f});
+  closeBtn->setPosition({sidePanelX + kSidePanelWidth / 2.f - 2.f,
+                         sidePanelY + kSidePanelHeight / 2.f - 2.f});
   editorMenu->addChild(closeBtn);
 
+  // ── finish ───────────────────────────────────────────────────────
   setCurrentFrame(inputs.empty() ? 0 : static_cast<int>(inputs.front().frame));
   refreshStatus();
   rebuildMarkers();
   return true;
 }
 
+// ════════════════════════════════════════════════════════════════════
+//  onClose()  —  unchanged logic
+// ════════════════════════════════════════════════════════════════════
 void MacroTimelineLayer::onClose(CCObject *) {
   if (!saved) {
     geode::createQuickPopup(
@@ -262,8 +336,8 @@ void MacroTimelineLayer::onClose(CCObject *) {
           if (!btn2)
             return;
 #ifdef GEODE_IS_WINDOWS
-          cocos2d::CCEGLView::sharedOpenGLView()->showCursor(cursorWasHidden ? false
-                                                                             : true);
+          cocos2d::CCEGLView::sharedOpenGLView()->showCursor(
+              cursorWasHidden ? false : true);
 #endif
           if (!previewWasPlaying)
             Macro::resetState(true);
@@ -284,6 +358,9 @@ void MacroTimelineLayer::onClose(CCObject *) {
   this->removeFromParentAndCleanup(true);
 }
 
+// ════════════════════════════════════════════════════════════════════
+//  sortInputs()
+// ════════════════════════════════════════════════════════════════════
 void MacroTimelineLayer::sortInputs() {
   std::sort(inputs.begin(), inputs.end(),
             [](input const &left, input const &right) {
@@ -295,20 +372,31 @@ void MacroTimelineLayer::sortInputs() {
                 return left.button < right.button;
               return left.down > right.down;
             });
-  maxFrame = std::max(1, inputs.empty() ? 1 : static_cast<int>(inputs.back().frame));
+  maxFrame =
+      std::max(1, inputs.empty() ? 1 : static_cast<int>(inputs.back().frame));
 }
 
+// ════════════════════════════════════════════════════════════════════
+//  markUnsaved()
+// ════════════════════════════════════════════════════════════════════
 void MacroTimelineLayer::markUnsaved() {
   saved = false;
   refreshStatus();
   rebuildMarkers();
 }
 
+// ════════════════════════════════════════════════════════════════════
+//  refreshStatus()
+// ════════════════════════════════════════════════════════════════════
 void MacroTimelineLayer::refreshStatus() {
   statusLabel->setString(
-      fmt::format("Inputs: {}{}", inputs.size(), saved ? "" : "  *unsaved").c_str());
+      fmt::format("Inputs: {}{}", inputs.size(), saved ? "" : "  *unsaved")
+          .c_str());
 }
 
+// ════════════════════════════════════════════════════════════════════
+//  rebuildMarkers()  —  REDESIGNED for new layout coordinates
+// ════════════════════════════════════════════════════════════════════
 void MacroTimelineLayer::rebuildMarkers() {
   if (!markerNode)
     return;
@@ -316,47 +404,87 @@ void MacroTimelineLayer::rebuildMarkers() {
   markerNode->clear();
 
   auto winSize = CCDirector::sharedDirector()->getWinSize();
-  float trackStartX = 36.f;
-  float trackWidth = winSize.width - 78.f;
-  float trackY = kBottomMargin + 28.f;
+
+  // Track geometry (must match setup())
+  float barLeft = kEdgeMargin;
+  float barRight = winSize.width - kEdgeMargin;
+  float barWidth = barRight - barLeft;
+  float trackWidth = barWidth - 24.f;
+  float trackStartX = barLeft + 12.f;
+  float trackCenterY = kEdgeMargin + kTrackY;
+
+  // ── Frame ruler ticks above the track ────────────────────────────
+  // Remove old tick labels first
+  for (int tag = 9000; tag <= 9032; ++tag) {
+    if (auto *node = m_mainLayer->getChildByTag(tag))
+      node->removeFromParentAndCleanup(true);
+  }
 
   int labelIndex = 0;
-  for (int frame = 0; frame <= maxFrame; frame += std::max(1, maxFrame / 12)) {
+  int tickCount = std::max(1, maxFrame / 12);
+  for (int frame = 0; frame <= maxFrame; frame += tickCount) {
     float x = trackStartX + trackWidth * frameToRatio(frame, maxFrame);
-    markerNode->drawSegment({x, trackY + 13.f}, {x, trackY + 25.f}, 0.55f,
-                            ccc4f(1.f, 1.f, 1.f, 0.25f));
 
-    auto *label = CCLabelBMFont::create(std::to_string(frame).c_str(), "chatFont.fnt");
-    label->setScale(0.33f);
-    label->setOpacity(110);
-    label->setPosition({x, trackY + 34.f});
+    // small tick line
+    markerNode->drawSegment({x, trackCenterY + kTrackHeight / 2.f + 2.f},
+                            {x, trackCenterY + kTrackHeight / 2.f + 14.f}, 0.5f,
+                            ccc4f(1.f, 1.f, 1.f, 0.22f));
+
+    // frame number label
+    auto *label =
+        CCLabelBMFont::create(std::to_string(frame).c_str(), "chatFont.fnt");
+    label->setScale(0.3f);
+    label->setOpacity(100);
+    label->setPosition({x, trackCenterY + kTrackHeight / 2.f + 22.f});
     m_mainLayer->addChild(label, 6, 9000 + labelIndex++);
   }
 
+  // ── Input markers ────────────────────────────────────────────────
   for (auto const &inp : inputs) {
-    float x = trackStartX + trackWidth * frameToRatio(static_cast<int>(inp.frame), maxFrame);
-    auto color = inp.down ? ccc4f(0.2f, 1.f, 0.3f, 0.95f)
-                          : ccc4f(1.f, 0.25f, 0.25f, 0.95f);
-    float extra = inp.player2 ? 15.f : 0.f;
-    float length = inp.down ? 28.f : 18.f;
-    markerNode->drawSegment({x, trackY - 34.f - extra}, {x, trackY - length - extra},
-                            0.85f, color);
-  }
-
-  if (selectedIndex >= 0 && selectedIndex < static_cast<int>(inputs.size())) {
     float x = trackStartX +
-              trackWidth * frameToRatio(static_cast<int>(inputs[selectedIndex].frame), maxFrame);
-    markerNode->drawSegment({x, trackY - 42.f}, {x, trackY + 32.f}, 1.35f,
-                            ccc4f(1.f, 0.85f, 0.18f, 0.95f));
+              trackWidth * frameToRatio(static_cast<int>(inp.frame), maxFrame);
+
+    // Hold = green above track, Release = red below track
+    if (inp.down) {
+      // green marker ABOVE the track
+      float extra = inp.player2 ? 6.f : 0.f;
+      markerNode->drawSegment(
+          {x, trackCenterY + kTrackHeight / 2.f + 2.f + extra},
+          {x, trackCenterY + kTrackHeight / 2.f + 12.f + extra}, 0.8f,
+          ccc4f(0.15f, 1.f, 0.3f, 0.9f));
+    } else {
+      // red marker BELOW the track
+      float extra = inp.player2 ? 6.f : 0.f;
+      markerNode->drawSegment(
+          {x, trackCenterY - kTrackHeight / 2.f - 2.f - extra},
+          {x, trackCenterY - kTrackHeight / 2.f - 10.f - extra}, 0.8f,
+          ccc4f(1.f, 0.2f, 0.2f, 0.9f));
+    }
   }
 
-  float playheadX = trackStartX + trackWidth * frameToRatio(currentFrame, maxFrame);
-  markerNode->drawDot({playheadX, trackY}, 26.f,
-                      ccc4f(1.f, 0.95f, 0.15f, 0.92f));
-  markerNode->drawDot({playheadX, trackY}, 18.f,
-                      ccc4f(0.92f, 0.82f, 0.1f, 0.98f));
+  // ── Highlight selected input ─────────────────────────────────────
+  if (selectedIndex >= 0 && selectedIndex < static_cast<int>(inputs.size())) {
+    float x =
+        trackStartX +
+        trackWidth * frameToRatio(static_cast<int>(inputs[selectedIndex].frame),
+                                  maxFrame);
+    markerNode->drawSegment({x, trackCenterY - kTrackHeight / 2.f - 14.f},
+                            {x, trackCenterY + kTrackHeight / 2.f + 14.f}, 1.3f,
+                            ccc4f(1.f, 0.85f, 0.18f, 0.92f));
+  }
+
+  // ── Playhead (two-layer yellow dot) ──────────────────────────────
+  float playheadX =
+      trackStartX + trackWidth * frameToRatio(currentFrame, maxFrame);
+  markerNode->drawDot({playheadX, trackCenterY}, 22.f,
+                      ccc4f(1.f, 0.95f, 0.15f, 0.88f));
+  markerNode->drawDot({playheadX, trackCenterY}, 15.f,
+                      ccc4f(0.95f, 0.85f, 0.1f, 0.98f));
 }
 
+// ════════════════════════════════════════════════════════════════════
+//  selectNearestInput()  —  unchanged
+// ════════════════════════════════════════════════════════════════════
 void MacroTimelineLayer::selectNearestInput() {
   if (inputs.empty()) {
     selectedIndex = -1;
@@ -367,7 +495,8 @@ void MacroTimelineLayer::selectNearestInput() {
   int bestIndex = 0;
   int bestDistance = std::abs(static_cast<int>(inputs[0].frame) - currentFrame);
   for (int index = 1; index < static_cast<int>(inputs.size()); ++index) {
-    int distance = std::abs(static_cast<int>(inputs[index].frame) - currentFrame);
+    int distance =
+        std::abs(static_cast<int>(inputs[index].frame) - currentFrame);
     if (distance < bestDistance) {
       bestDistance = distance;
       bestIndex = index;
@@ -378,6 +507,9 @@ void MacroTimelineLayer::selectNearestInput() {
   refreshSelectedInfo();
 }
 
+// ════════════════════════════════════════════════════════════════════
+//  refreshSelectedInfo()  —  unchanged
+// ════════════════════════════════════════════════════════════════════
 void MacroTimelineLayer::refreshSelectedInfo() {
   if (selectedIndex < 0 || selectedIndex >= static_cast<int>(inputs.size())) {
     selectedLabel->setString("No input selected");
@@ -394,7 +526,8 @@ void MacroTimelineLayer::refreshSelectedInfo() {
   }
 
   auto const &inp = inputs[selectedIndex];
-  selectedLabel->setString(fmt::format("#{} at {}", selectedIndex + 1, inp.frame).c_str());
+  selectedLabel->setString(
+      fmt::format("#{} at {}", selectedIndex + 1, inp.frame).c_str());
   frameInput->setString(std::to_string(inp.frame).c_str());
   if (frameValueLabel)
     frameValueLabel->setString(std::to_string(inp.frame).c_str());
@@ -406,6 +539,9 @@ void MacroTimelineLayer::refreshSelectedInfo() {
     playerValueLabel->setString(inp.player2 ? "Two" : "One");
 }
 
+// ════════════════════════════════════════════════════════════════════
+//  setCurrentFrame()  —  updated for new layout
+// ════════════════════════════════════════════════════════════════════
 void MacroTimelineLayer::setCurrentFrame(int frame, bool updateSlider) {
   currentFrame = std::clamp(frame, 0, maxFrame);
   frameLabel->setString(fmt::format("Frame: {}", currentFrame).c_str());
@@ -413,6 +549,7 @@ void MacroTimelineLayer::setCurrentFrame(int frame, bool updateSlider) {
     timelineSlider->setValue(frameToRatio(currentFrame, maxFrame));
   selectNearestInput();
 
+  // Remove old frame-ruler labels & redraw everything
   for (int tag = 9000; tag <= 9032; ++tag) {
     if (auto *node = m_mainLayer->getChildByTag(tag))
       node->removeFromParentAndCleanup(true);
@@ -421,11 +558,17 @@ void MacroTimelineLayer::setCurrentFrame(int frame, bool updateSlider) {
   rebuildMarkers();
 }
 
+// ════════════════════════════════════════════════════════════════════
+//  onSlider()  —  unchanged
+// ════════════════════════════════════════════════════════════════════
 void MacroTimelineLayer::onSlider(CCObject *) {
   float value = timelineSlider->getValue();
   setCurrentFrame(static_cast<int>(std::round(value * maxFrame)), false);
 }
 
+// ════════════════════════════════════════════════════════════════════
+//  navigation / editing  —  all unchanged
+// ════════════════════════════════════════════════════════════════════
 void MacroTimelineLayer::onPrevInput(CCObject *) {
   if (inputs.empty())
     return;

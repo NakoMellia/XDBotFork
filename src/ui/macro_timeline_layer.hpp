@@ -56,7 +56,7 @@ private:
   void nudgeFrame(CCObject *);
 
 public:
-  STATIC_CREATE(MacroTimelineLayer, 455, 140)
+  STATIC_CREATE(MacroTimelineLayer, 580, 320)
 
   static void open();
 };
