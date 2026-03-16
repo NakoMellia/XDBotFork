@@ -438,6 +438,7 @@ $execute {
     g.mod->setSavedValue("macro_audio_speedhack", std::string("1.0"));
     g.mod->setSavedValue("macro_audio_speedhack_enabled", false);
     g.mod->setSavedValue("render_record_audio", true);
+    g.mod->setSavedValue("render_only_song", false);
     g.mod->setSavedValue("render_args", std::string("-pix_fmt yuv420p"));
     g.mod->setSavedValue("macro_noclip_p1", true);
     g.mod->setSavedValue("macro_noclip_p2", true);
@@ -458,6 +459,13 @@ $execute {
 
     g.mod->setSavedValue("render_record_audio", true);
     g.mod->setSavedValue("render_hide_labels", true);
+
+#ifdef GEODE_IS_ANDROID
+    // Mobile defaults: prefer level-song mixing and avoid colorspace args.
+    g.mod->setSavedValue("render_video_args", std::string(""));
+    g.mod->setSavedValue("render_record_audio", false);
+    g.mod->setSavedValue("render_only_song", true);
+#endif
 
     g.mod->setSavedValue("macro_seed", std::to_string(1));
     g.mod->setSavedValue("macro_speedhack", std::string("0.5"));

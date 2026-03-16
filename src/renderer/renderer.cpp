@@ -422,7 +422,24 @@ void Renderer::start() {
 
     if (usingApi) {
 #ifdef GEODE_IS_MOBILE
-      auto res = ffmpeg.init(settings);
+      auto initSettings = settings;
+      auto res = ffmpeg.init(initSettings);
+      if (res.isErr() && !initSettings.m_colorspaceFilters.empty()) {
+        std::string err = res.unwrapErr();
+        // Some mobile FFmpeg builds don't support colorspace options.
+        if (err.find("Could not create colorspace") != std::string::npos ||
+            err.find("Option not found") != std::string::npos) {
+          initSettings.m_colorspaceFilters = "";
+          res = ffmpeg.init(initSettings);
+          if (res.isOk()) {
+            Loader::get()->queueInMainThread([] {
+              Notification::create("Render: disabled Video Args fallback",
+                                   NotificationIcon::Warning)
+                  ->show();
+            });
+          }
+        }
+      }
       if (res.isErr()) {
         std::string err = res.unwrapErr();
         Loader::get()->queueInMainThread([err] {
@@ -528,13 +545,17 @@ void Renderer::start() {
     });
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-    std::filesystem::path recordedAudioFile = "fmodoutput.wav";
-    std::filesystem::path recordedAudioAlt =
+    std::filesystem::path recordedAudioFile =
         Mod::get()->getSaveDir() / "fmodoutput.wav";
+    std::filesystem::path recordedAudioLegacy = "fmodoutput.wav";
 
     if (!std::filesystem::exists(recordedAudioFile) &&
-        std::filesystem::exists(recordedAudioAlt))
-      recordedAudioFile = recordedAudioAlt;
+        std::filesystem::exists(recordedAudioLegacy)) {
+      std::error_code moveEc;
+      std::filesystem::rename(recordedAudioLegacy, recordedAudioFile, moveEc);
+      if (moveEc)
+        recordedAudioFile = recordedAudioLegacy;
+    }
 
     if (audioMode == AudioMode::Record &&
         !std::filesystem::exists(recordedAudioFile) &&
@@ -705,9 +726,12 @@ void Renderer::start() {
       log::warn("Failed to remove temp audio file.");
 
     ec.clear();
-    std::filesystem::remove("fmodoutput.wav", ec);
+    std::filesystem::remove(recordedAudioFile, ec);
     if (ec)
       log::warn("Failed to remove fmod audio file.");
+
+    ec.clear();
+    std::filesystem::remove(recordedAudioLegacy, ec);
 
     Loader::get()->queueInMainThread([] {
       Notification::create("Render Saved With Audio", NotificationIcon::Success)
