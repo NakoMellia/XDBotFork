@@ -256,15 +256,13 @@ bool RenderSettingsLayer::setup() {
     lbl->setScale(0.325);
     menu->addChild(lbl);
     
-    if (usingApi) lbl->setOpacity(90);
-
     onlySongToggle = CCMenuItemToggler::create(
         CCSprite::createWithSpriteFrameName("GJ_checkOff_001.png"),
         CCSprite::createWithSpriteFrameName("GJ_checkOn_001.png"),
         this, menu_selector(RecordLayer::toggleSetting));
     onlySongToggle->setPosition(ccp(0, -32));
     onlySongToggle->setScale(0.555);
-    if (!usingApi) onlySongToggle->toggle(mod->getSavedValue<bool>("render_only_song"));
+    onlySongToggle->toggle(mod->getSavedValue<bool>("render_only_song"));
     onlySongToggle->setID("render_only_song");
     menu->addChild(onlySongToggle);
 
@@ -275,15 +273,13 @@ bool RenderSettingsLayer::setup() {
     lbl->setScale(0.325);
     menu->addChild(lbl);
     
-    if (usingApi) lbl->setOpacity(90);
-
     recordAudioToggle = CCMenuItemToggler::create(
         CCSprite::createWithSpriteFrameName("GJ_checkOff_001.png"),
         CCSprite::createWithSpriteFrameName("GJ_checkOn_001.png"),
         this, menu_selector(RecordLayer::toggleSetting));
     recordAudioToggle->setPosition(ccp(0, -58));
     recordAudioToggle->setScale(0.555);
-    if (!usingApi) recordAudioToggle->toggle(mod->getSavedValue<bool>("render_record_audio"));
+    recordAudioToggle->toggle(mod->getSavedValue<bool>("render_record_audio"));
     recordAudioToggle->setID("render_record_audio");
     menu->addChild(recordAudioToggle);
 
@@ -484,14 +480,6 @@ bool RenderSettingsLayer::setup() {
         fadeInInput->setEnabled(false);
         // fadeInInput->getInputNode()->m_placeholderLabel->setOpacity(100);
         fadeInInput->getBGSprite()->setOpacity(40);
-
-        onlySongToggle->setCascadeOpacityEnabled(true);
-        onlySongToggle->setEnabled(false);
-        recordAudioToggle->setCascadeOpacityEnabled(true);
-        recordAudioToggle->setEnabled(false);
-
-        onlySongToggle->setOpacity(100);
-        recordAudioToggle->setOpacity(100);
 
         sfxSlider->setID("disabled-slider"_spr);
         musicSlider->setID("disabled-slider"_spr);

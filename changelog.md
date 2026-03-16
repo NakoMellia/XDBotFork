@@ -1,3 +1,9 @@
+# v2.6.4
+
+* Added an option to disable Auto Safe Mode.
+* Added PathFinder (TEST, works but still rough).
+* Added Ghost Playback (TEST).
+
 # v2.6.3
 
 * Added Auto Swift Click feature (fully automatic click multiplier on press).
