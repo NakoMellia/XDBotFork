@@ -854,21 +854,12 @@ bool RecordLayer::setup() {
 
   // NakoMod: Continue Botting button
   {
-    auto timelineSprite =
-        ButtonSprite::create("Timeline", "goldFont.fnt", "GJ_button_01.png", 0.8f);
-    timelineSprite->setScale(0.5f);
-    auto timelineBtn = CCMenuItemSpriteExtra::create(
-        timelineSprite, this, menu_selector(RecordLayer::openTimeline));
-    timelineBtn->setPosition(ccp(-116.5, 54));
-    timelineBtn->setVisible(!g.macro.inputs.empty());
-    menu->addChild(timelineBtn);
-
     auto continueSprite = ButtonSprite::create("Continue", "goldFont.fnt",
                                                "GJ_button_01.png", 0.8f);
     continueSprite->setScale(0.5f);
     continueBtn = CCMenuItemSpriteExtra::create(
         continueSprite, this, menu_selector(RecordLayer::toggleContinue));
-    continueBtn->setPosition(ccp(-116.5, 28));
+    continueBtn->setPosition(ccp(-116.5, 54));
     // Only show if macro has a lastRecordedFrame
     continueBtn->setVisible(g.macro.lastRecordedFrame > 0 &&
                             !g.macro.inputs.empty());

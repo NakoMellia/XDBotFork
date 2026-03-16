@@ -528,14 +528,26 @@ void Renderer::start() {
     });
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-    if ((SFXVolume == 0.f && musicVolume == 0.f) ||
-        audioMode == AudioMode::Off ||
+    std::filesystem::path recordedAudioFile = "fmodoutput.wav";
+    std::filesystem::path recordedAudioAlt =
+        Mod::get()->getSaveDir() / "fmodoutput.wav";
+
+    if (!std::filesystem::exists(recordedAudioFile) &&
+        std::filesystem::exists(recordedAudioAlt))
+      recordedAudioFile = recordedAudioAlt;
+
+    if (audioMode == AudioMode::Record &&
+        !std::filesystem::exists(recordedAudioFile) &&
+        std::filesystem::exists(songFile))
+      audioMode = AudioMode::Song;
+
+    if ((SFXVolume == 0.f && musicVolume == 0.f) || audioMode == AudioMode::Off ||
         (audioMode == AudioMode::Song && !std::filesystem::exists(songFile)) ||
         (audioMode == AudioMode::Record &&
-         !std::filesystem::exists("fmodoutput.wav"))) {
+         !std::filesystem::exists(recordedAudioFile))) {
       if (audioMode != AudioMode::Off) {
         Loader::get()->queueInMainThread([] {
-          FLAlertLayer::create("Error", "Song File not found.", "Ok")->show();
+          FLAlertLayer::create("Error", "Audio file not found.", "Ok")->show();
         });
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -563,8 +575,9 @@ void Renderer::start() {
 
     if (usingApi) {
 #ifdef GEODE_IS_MOBILE
-      std::string file =
-          audioMode == AudioMode::Song ? songFile : "fmodoutput.wav";
+      std::string file = audioMode == AudioMode::Song
+                             ? songFile
+                             : recordedAudioFile.string();
       auto res = ffmpeg::AudioMixer::mixVideoAudio(path, file, tempPath);
       log::debug("XD");
       if (res.isErr()) {
@@ -608,9 +621,10 @@ void Renderer::start() {
       }
 
       if (audioMode == AudioMode::Record) {
-        command = fmt::format("\"{}\" -i \"fmodoutput.wav\" -acodec pcm_s16le "
+        command = fmt::format("\"{}\" -i \"{}\" -acodec pcm_s16le "
                               "-ar 44100 -ac 2 \"{}\"",
-                              ffmpegPath, tempPathAudio);
+                              ffmpegPath, recordedAudioFile.string(),
+                              tempPathAudio);
 
         process = subprocess::Popen(command); // Fix ffmpeg not reading it
         if (process.close()) {
@@ -708,9 +722,6 @@ void Renderer::stop(int frame) {
   pause = true;
   recording = false;
   timeAfter = 0.f;
-
-  if (usingApi)
-    audioMode = AudioMode::Off;
 
   if (PlayLayer *pl = PlayLayer::get()) {
 
