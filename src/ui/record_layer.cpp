@@ -72,6 +72,7 @@ const std::vector<std::vector<RecordSetting>> settings{
      {"No Mirror Portal:", "no_mirror_portal", InputType::None},
      {"Enable Auto Saving:", "macro_auto_save", InputType::Autosave}},
     {{"Ghost Playback:", "macro_show_ghost", InputType::None},
+     {"Safe Mode:", "macro_auto_safe_mode", InputType::None},
      {"Path Finder:", "macro_pathfinder_enabled", InputType::Settings, 0.325f,
       menu_selector(PathFinderSettingsLayer::open)},
      {"Path Finder Test:", "macro_pathfinder_test_enabled", InputType::Settings,
@@ -513,6 +514,8 @@ void RecordLayer::toggleSetting(CCObject *obj) {
     g.ghostPlayback = value;
   if (id == "macro_show_ghost" && !value)
     ShowTrajectory::ghostOff();
+  if (id == "macro_auto_safe_mode" && !value)
+    g.safeMode = false;
   if (id == "macro_pathfinder_enabled") {
     if (value)
       PathFinder::start();
