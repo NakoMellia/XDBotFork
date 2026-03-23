@@ -162,6 +162,8 @@ void LoadMacroLayer::onImportMacroFinished(file::PickResult res) {
 
     auto &g = Global::get();
     Macro tempMacro;
+    std::vector<std::uint8_t> macroData;
+    bool gdr2Macro = false;
 
     if (path.extension() == ".xd") {
       tempMacro = Macro::XDtoGDR(path);
@@ -180,12 +182,13 @@ void LoadMacroLayer::onImportMacroFinished(file::PickResult res) {
       size_t fileSize = f.tellg();
       f.seekg(0, std::ios::beg);
 
-      std::vector<std::uint8_t> macroData(fileSize);
+      macroData.resize(fileSize);
 
       f.read(reinterpret_cast<char *>(macroData.data()), fileSize);
       f.close();
 
       if (Macro::isGDR2Data(macroData)) {
+        gdr2Macro = true;
         auto imported = Macro::importGDR2(macroData);
         if (!imported.has_value()) {
           FLAlertLayer::create(
@@ -216,14 +219,15 @@ void LoadMacroLayer::onImportMacroFinished(file::PickResult res) {
         name;
 
     iterations = 0;
-    while (std::filesystem::exists(finalPath.string() + ".gdr.json")) {
+    std::string finalExtension = gdr2Macro ? ".gdr2" : ".gdr.json";
+    while (std::filesystem::exists(finalPath.string() + finalExtension)) {
       iterations++;
       std::string suffix = " (" + std::to_string(iterations) + ")";
       finalPath =
           finalPath.parent_path() / (finalPath.stem().string() + suffix);
     }
 
-    finalPath += ".gdr.json";
+    finalPath += finalExtension;
 
     std::ofstream f2(finalPath, std::ios::binary);
     if (!f2.is_open()) {
@@ -233,8 +237,12 @@ void LoadMacroLayer::onImportMacroFinished(file::PickResult res) {
       return;
     }
 
-    auto data = tempMacro.exportData(true);
-    f2.write(reinterpret_cast<const char *>(data.data()), data.size());
+    if (gdr2Macro) {
+      f2.write(reinterpret_cast<const char *>(macroData.data()), macroData.size());
+    } else {
+      auto data = tempMacro.exportData(true);
+      f2.write(reinterpret_cast<const char *>(data.data()), data.size());
+    }
     f2.close();
 
     this->reloadList(0);
