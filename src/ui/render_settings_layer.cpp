@@ -151,8 +151,6 @@ bool RenderSettingsLayer::setup() {
     bg->setContentSize({ 401, 55 });
     menu->addChild(bg);
     
-    if (usingApi) bg->setOpacity(40);
-
     lbl = CCLabelBMFont::create("Audio Args:", "bigFont.fnt");
     lbl->setPosition(ccp(-105, 55));
     lbl->setAnchorPoint({ 0, 0.5 });
@@ -160,8 +158,6 @@ bool RenderSettingsLayer::setup() {
     lbl->setScale(0.325);
     menu->addChild(lbl);
     
-    if (usingApi) lbl->setOpacity(90);
-
     audioArgsInput = CCTextInputNode::create(150, 30, "audio args", "chatFont.fnt");
     audioArgsInput->m_textField->setAnchorPoint({ 0.5f, 0.5f });
     audioArgsInput->ignoreAnchorPointForPosition(true);
@@ -405,8 +401,6 @@ bool RenderSettingsLayer::setup() {
     lbl->setPosition({188, 42});
     menu->addChild(lbl);
     
-    if (usingApi) lbl->setOpacity(90);
-
     sfxSlider = Slider::create(
 		this,
 		menu_selector(RenderSettingsLayer::onSlider),
@@ -423,8 +417,6 @@ bool RenderSettingsLayer::setup() {
     lbl->setPosition({188, 87});
     menu->addChild(lbl);
     
-    if (usingApi) lbl->setOpacity(90);
-
     musicSlider = Slider::create(
 		this,
 		menu_selector(RenderSettingsLayer::onSlider),
@@ -464,10 +456,8 @@ bool RenderSettingsLayer::setup() {
 
     if (usingApi) {
         // argsInput->m_placeholderLabel->setOpacity(100);
-        // audioArgsInput->m_placeholderLabel->setOpacity(100);
 
         argsInput->setID("disabled-input"_spr);
-        audioArgsInput->setID("disabled-input"_spr);
 
         extensionInput->setEnabled(false);
         // extensionInput->getInputNode()->m_placeholderLabel->setOpacity(100);
@@ -480,16 +470,6 @@ bool RenderSettingsLayer::setup() {
         fadeInInput->setEnabled(false);
         // fadeInInput->getInputNode()->m_placeholderLabel->setOpacity(100);
         fadeInInput->getBGSprite()->setOpacity(40);
-
-        sfxSlider->setID("disabled-slider"_spr);
-        musicSlider->setID("disabled-slider"_spr);
-
-        sfxSlider->m_sliderBar->setOpacity(100);
-        sfxSlider->m_groove->setOpacity(100);
-        sfxSlider->m_touchLogic->setOpacity(100);
-        musicSlider->m_sliderBar->setOpacity(100);
-        musicSlider->m_groove->setOpacity(100);
-        musicSlider->m_touchLogic->setOpacity(100);
     }
 
     return true;

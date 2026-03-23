@@ -159,13 +159,6 @@ bool Renderer::shouldUseAPI() {
 
 bool Renderer::toggle() {
   auto &g = Global::get();
-  if (Loader::get()->isModLoaded("syzzi.click_between_frames")) {
-    FLAlertLayer::create("Render", "Disable CBF in Geode to render a level.",
-                         "OK")
-        ->show();
-    return false;
-  }
-
   bool foundApi = Loader::get()->isModLoaded("eclipse.ffmpeg-api");
   std::filesystem::path ffmpegPath =
       Mod::get()->getSettingValue<std::filesystem::path>("ffmpeg_path");

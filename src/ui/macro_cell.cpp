@@ -170,6 +170,7 @@ void MacroCell::handleLoad() {
 	g.macro.canChangeFPS = false;
 
     g.macro.xdBotMacro = g.macro.botInfo.name == "xdBot";
+	bool legacyGdrMacro = path.extension() == ".gdr" && !g.macro.xdBotMacro;
 
 	loadLayer->setKeypadEnabled(false);
 	loadLayer->setTouchEnabled(false);
@@ -201,6 +202,11 @@ void MacroCell::handleLoad() {
 
 	if (path.extension() == ".xd")
 		FLAlertLayer::create("Warning", "<cl>.xd</c> extension macros may not function correctly in this version.", "Ok")->show();
+
+	if (legacyGdrMacro)
+		Notification::create("Using Legacy .gdr format.  Trajectory can be broken",
+							 NotificationIcon::Warning)
+			->show();
 
 	Notification::create("Macro Loaded", NotificationIcon::Success)->show();
 }

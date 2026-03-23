@@ -10,7 +10,6 @@ add_library(${PROJECT_NAME} SHARED
     src/main.cpp
     src/global.cpp
     src/pathfinder.cpp
-    src/pathfinder_test.cpp
     src/macro.cpp
     src/keybinds.cpp
     src/utils/utils.cpp
