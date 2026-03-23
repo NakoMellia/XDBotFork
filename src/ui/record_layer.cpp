@@ -15,6 +15,7 @@
 #include "swift_click_settings_layer.hpp"
 #include "trajectory_settings_layer.hpp"
 
+#include <Geode/modify/EditorPauseLayer.hpp>
 #include <Geode/modify/PauseLayer.hpp>
 #include <Geode/utils/web.hpp>
 
@@ -108,6 +109,31 @@ class $modify(PauseLayer) {
       menu->addChild(btn);
       menu->updateLayout();
     }
+  }
+};
+
+class $modify(XdBotEditorPauseLayer, EditorPauseLayer) {
+  bool init(LevelEditorLayer *lel) {
+    if (!EditorPauseLayer::init(lel))
+      return false;
+
+    auto *menu = this->getChildByID("guidelines-menu");
+    if (!menu)
+      return true;
+
+    auto *sprite = CCSprite::createWithSpriteFrameName("GJ_playBtn2_001.png");
+    if (!sprite)
+      return true;
+
+    sprite->setScale(0.6f);
+
+    auto *btn = CCMenuItemSpriteExtra::create(
+        sprite, this, menu_selector(RecordLayer::openMenu2));
+    btn->setID("xdbot-editor-button"_spr);
+    menu->addChild(btn);
+    menu->updateLayout();
+
+    return true;
   }
 };
 

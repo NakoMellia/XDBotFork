@@ -6,6 +6,8 @@
 * Fixed mobile render settings so audio args and volume can be changed.
 * Removed the render warning/block for CBF.
 * Removed PathFinder Test.
+* Added macro playback support during editor playtest.
+* Added an xdBot menu button to the editor pause layer.
 
 # v2.6.4
 

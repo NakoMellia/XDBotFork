@@ -2,6 +2,7 @@
 #include "ui/record_layer.hpp"
 
 #include <Geode/modify/CCTextInputNode.hpp>
+#include <Geode/binding/LevelEditorLayer.hpp>
 
 #ifdef GEODE_IS_WINDOWS
 // #include <geode.custom-keybinds/include/Keybinds.hpp> // incompatible with
@@ -171,25 +172,24 @@ float Global::getTPS() {
 }
 
 int Global::getCurrentFrame(bool editor) {
-  // double levelTime;
   PlayLayer *pl = PlayLayer::get();
+  auto *editorLayer = LevelEditorLayer::get();
+  auto &g = Global::get();
+
+  int frame;
 
   if (!pl) {
-    if (!editor)
+    if (!editorLayer || editorLayer->m_playbackMode != PlaybackMode::Playing)
       return 0;
 
-    // levelTime = GJBaseGameLayer::get()->m_gameState.m_levelTime;
-  }
-
-  auto &g = Global::get();
-  int frame;
-  // levelTime = pl->m_gameState.m_levelTime;
-
-  if (!g.macro.xdBotMacro && g.state == state::playing) {
-    frame = pl->m_gameState.m_currentProgress;
+    frame = static_cast<int>(editorLayer->m_gameState.m_currentProgress / 2);
   } else {
-    frame = static_cast<int>(pl->m_gameState.m_levelTime * getTPS());
-    frame++;
+    if (!g.macro.xdBotMacro && g.state == state::playing) {
+      frame = pl->m_gameState.m_currentProgress;
+    } else {
+      frame = static_cast<int>(pl->m_gameState.m_levelTime * getTPS());
+      frame++;
+    }
   }
 
   frame -= g.frameOffset;

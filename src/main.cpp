@@ -6,6 +6,8 @@
 #include "ui/record_layer.hpp"
 
 #include <Geode/modify/GJBaseGameLayer.hpp>
+#include <Geode/modify/EditorUI.hpp>
+#include <Geode/modify/LevelEditorLayer.hpp>
 #include <Geode/modify/PauseLayer.hpp>
 #include <Geode/modify/PlayLayer.hpp>
 
@@ -214,11 +216,24 @@ class $modify(BGLHook, GJBaseGameLayer) {
     auto &g = Global::get();
 
     PlayLayer *pl = PlayLayer::get();
+    auto *editorLayer = typeinfo_cast<LevelEditorLayer *>(this);
+    bool editorPlaytest =
+        !pl && editorLayer && editorLayer->m_playbackMode == PlaybackMode::Playing;
 
-    if (!pl) {
-      // handlePlaying(Global::getCurrentFrame(true));
-      // log::debug("{}", Global::getCurrentFrame(true));
+    if (!pl && !editorPlaytest) {
       return GJBaseGameLayer::processCommands(dt, isHalfTick, isLastTick);
+    }
+
+    if (editorPlaytest) {
+      GJBaseGameLayer::processCommands(dt, isHalfTick, isLastTick);
+
+      if (g.state != state::playing)
+        return;
+
+      int frame = Global::getCurrentFrame(true);
+      g.previousFrame = frame;
+      handlePlaying(frame);
+      return;
     }
 
     Global::updateSeed();
@@ -537,6 +552,25 @@ class $modify(BGLHook, GJBaseGameLayer) {
             g.mod->getSavedValue<bool>("p2_input_mirror_inverted") ? !hold
                                                                    : hold);
     }
+  }
+};
+
+class $modify(XdBotEditorUI, EditorUI) {
+  void onPlaytest(CCObject *sender) {
+    auto &g = Global::get();
+
+    if (m_editorLayer && m_editorLayer->m_playbackMode == PlaybackMode::Not) {
+      g.currentAction = 0;
+      g.currentFrameFix = 0;
+      g.previousFrame = 0;
+      g.respawnFrame = -1;
+      Macro::resetVariables();
+
+      if (g.state == state::playing)
+        m_editorLayer->m_gameState.m_currentProgress = 0;
+    }
+
+    EditorUI::onPlaytest(sender);
   }
 };
 
