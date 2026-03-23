@@ -33,7 +33,7 @@
 			"type": "keybind",
 			"name": "Open Menu",
 			"description": "Opens or closes the xdBot menu.",
-			"default": "Alt"
+			"default": ["LeftMenu", "RightMenu"]
 		},
 		"keybind_toggle_macro": {
 			"type": "keybind",

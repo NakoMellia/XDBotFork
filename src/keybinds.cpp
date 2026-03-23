@@ -79,19 +79,7 @@ class $modify(CCKeyboardDispatcher) {
 namespace {
 
 bool shouldHandleXdBotKeybind(bool down, bool repeat) {
-  auto &g = Global::get();
-
   if (!down || repeat)
-    return false;
-
-  if (g.mod->getSettingValue<bool>("disable_keybinds"))
-    return false;
-
-  if (LevelEditorLayer::get() && !g.mod->getSettingValue<bool>("editor_keybinds"))
-    return false;
-
-  if (g.state != state::recording &&
-      g.mod->getSettingValue<bool>("recording_only_keybinds"))
     return false;
 
   return true;
