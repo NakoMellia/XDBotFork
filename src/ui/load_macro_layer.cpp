@@ -185,7 +185,19 @@ void LoadMacroLayer::onImportMacroFinished(file::PickResult res) {
       f.read(reinterpret_cast<char *>(macroData.data()), fileSize);
       f.close();
 
-      tempMacro = Macro::importData(macroData);
+      if (Macro::isGDR2Data(macroData)) {
+        auto imported = Macro::importGDR2(macroData);
+        if (!imported.has_value()) {
+          FLAlertLayer::create(
+              "Error", "There was an error importing this macro. ID: 48", "Ok")
+              ->show();
+          return;
+        }
+
+        tempMacro = std::move(imported.value());
+      } else {
+        tempMacro = Macro::importData(macroData);
+      }
     }
 
     bool xdMacro = path.extension() == ".xd";
@@ -242,7 +254,7 @@ void LoadMacroLayer::onImportMacro(CCObject *) {
   file::FilePickOptions::Filter textFilter;
   file::FilePickOptions fileOptions;
   textFilter.description = "Macro Files";
-  textFilter.files = {"*.gdr", "*.xd", "*.json"};
+  textFilter.files = {"*.gdr", "*.gdr2", "*.xd", "*.json"};
   fileOptions.filters.push_back(textFilter);
 
   geode::async::spawn(
@@ -457,8 +469,8 @@ void LoadMacroLayer::addList(bool refresh, float prevScroll) {
 
   for (int i = start; i != end; i += step) {
 
-    if (macros[i].extension() != ".gdr" && macros[i].extension() != ".xd" &&
-        macros[i].extension() != ".json")
+    if (macros[i].extension() != ".gdr" && macros[i].extension() != ".gdr2" &&
+        macros[i].extension() != ".xd" && macros[i].extension() != ".json")
       continue;
 
     std::string name = macros[i].filename().string().substr(

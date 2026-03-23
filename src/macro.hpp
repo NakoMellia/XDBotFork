@@ -63,6 +63,10 @@ public:
 
     static Macro XDtoGDR(std::filesystem::path path);
 
+    static bool isGDR2Data(std::vector<std::uint8_t> const& data);
+
+    static std::optional<Macro> importGDR2(std::vector<std::uint8_t> const& data);
+
     static void resetVariables();
 
     static void resetState(bool cp = false);

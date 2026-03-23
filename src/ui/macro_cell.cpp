@@ -140,7 +140,20 @@ void MacroCell::handleLoad() {
 		f.read(reinterpret_cast<char*>(macroData.data()), fileSize);
 		f.close();
 
-		newMacro = Macro::importData(macroData);
+		if (Macro::isGDR2Data(macroData)) {
+			auto imported = Macro::importGDR2(macroData);
+			if (!imported.has_value()) {
+				if (!isMerge)
+					return FLAlertLayer::create("Error", "There was an error loading this macro. ID: 48", "Ok")->show();
+				else
+					return;
+			}
+
+			newMacro = std::move(imported.value());
+		}
+		else {
+			newMacro = Macro::importData(macroData);
+		}
 	}
 
 	if (isMerge) {

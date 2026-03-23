@@ -2,7 +2,100 @@
 #include "ui/game_ui.hpp"
 #include "ui/record_layer.hpp"
 
+#include <array>
+#include <bit>
+#include <cstring>
+#include <optional>
+#include <span>
+
 #include <Geode/modify/PlayLayer.hpp>
+
+namespace {
+
+class GDR2Reader {
+public:
+  explicit GDR2Reader(std::span<std::uint8_t const> data) : m_data(data) {}
+
+  bool empty() const { return m_data.empty(); }
+
+  bool readBytes(void *out, size_t size) {
+    if (size > m_data.size())
+      return false;
+
+    std::memcpy(out, m_data.data(), size);
+    m_data = m_data.subspan(size);
+    return true;
+  }
+
+  bool skip(size_t size) {
+    if (size > m_data.size())
+      return false;
+
+    m_data = m_data.subspan(size);
+    return true;
+  }
+
+  template <typename T> bool readVarint(T &out) {
+    static_assert(std::is_integral_v<T>);
+
+    uint64_t value = 0;
+    int shift = 0;
+
+    while (true) {
+      if (m_data.empty() || shift > 63)
+        return false;
+
+      auto byte = m_data.front();
+      m_data = m_data.subspan(1);
+
+      value |= static_cast<uint64_t>(byte & 0x7F) << shift;
+      if ((byte & 0x80) == 0)
+        break;
+
+      shift += 7;
+    }
+
+    out = static_cast<T>(value);
+    return true;
+  }
+
+  template <typename T> bool readBE(T &out) {
+    std::array<std::uint8_t, sizeof(T)> bytes{};
+    if (!readBytes(bytes.data(), bytes.size()))
+      return false;
+
+    if constexpr (std::endian::native == std::endian::little)
+      std::reverse(bytes.begin(), bytes.end());
+
+    std::memcpy(&out, bytes.data(), sizeof(T));
+    return true;
+  }
+
+  bool readBool(bool &out) {
+    uint8_t value = 0;
+    if (!readVarint(value))
+      return false;
+    out = value != 0;
+    return true;
+  }
+
+  bool readString(std::string &out) {
+    size_t size = 0;
+    if (!readVarint(size))
+      return false;
+    if (size > m_data.size())
+      return false;
+
+    out.assign(reinterpret_cast<char const *>(m_data.data()), size);
+    m_data = m_data.subspan(size);
+    return true;
+  }
+
+private:
+  std::span<std::uint8_t const> m_data;
+};
+
+} // namespace
 
 void Macro::recordAction(int frame, int button, bool player2, bool hold) {
   PlayLayer *pl = PlayLayer::get();
@@ -303,6 +396,115 @@ Macro Macro::XDtoGDR(std::filesystem::path path) {
   file.close();
 
   return newMacro;
+}
+
+bool Macro::isGDR2Data(std::vector<std::uint8_t> const &data) {
+  return data.size() >= 4 && data[0] == 'G' && data[1] == 'D' &&
+         data[2] == 'R';
+}
+
+std::optional<Macro> Macro::importGDR2(
+    std::vector<std::uint8_t> const &data) {
+  if (!isGDR2Data(data))
+    return std::nullopt;
+
+  GDR2Reader reader(data);
+
+  char magic[3]{};
+  if (!reader.readBytes(magic, sizeof(magic)))
+    return std::nullopt;
+
+  uint64_t version = 0;
+  if (!reader.readVarint(version) || version != 2)
+    return std::nullopt;
+
+  Macro macro;
+  std::string inputTag;
+
+  int gameVersion = 0;
+  double framerate = 240.0;
+  int replaySeed = 0;
+
+  if (!reader.readString(inputTag) || !reader.readString(macro.author) ||
+      !reader.readString(macro.description) || !reader.readBE(macro.duration) ||
+      !reader.readVarint(gameVersion) || !reader.readBE(framerate) ||
+      !reader.readVarint(replaySeed) || !reader.readVarint(macro.coins) ||
+      !reader.readBool(macro.ldm))
+    return std::nullopt;
+
+  macro.gameVersion = static_cast<float>(gameVersion);
+  macro.framerate = static_cast<float>(framerate);
+  static_cast<gdr::Replay<Macro, input> &>(macro).seed = replaySeed;
+  macro.seed = static_cast<uintptr_t>(replaySeed);
+
+  bool platformer = false;
+  if (!reader.readBool(platformer) || !reader.readString(macro.botInfo.name))
+    return std::nullopt;
+
+  int botVersion = 0;
+  if (!reader.readVarint(botVersion) || !reader.readVarint(macro.levelInfo.id) ||
+      !reader.readString(macro.levelInfo.name))
+    return std::nullopt;
+
+  macro.botInfo.version = std::to_string(botVersion);
+
+  size_t extensionSize = 0;
+  if (!reader.readVarint(extensionSize) || !reader.skip(extensionSize))
+    return std::nullopt;
+
+  size_t deathCount = 0;
+  if (!reader.readVarint(deathCount))
+    return std::nullopt;
+
+  uint64_t deathFrame = 0;
+  for (size_t i = 0; i < deathCount; ++i) {
+    uint64_t delta = 0;
+    if (!reader.readVarint(delta))
+      return std::nullopt;
+    deathFrame += delta;
+  }
+
+  size_t inputCount = 0;
+  size_t p1InputCount = 0;
+  if (!reader.readVarint(inputCount) || !reader.readVarint(p1InputCount) ||
+      p1InputCount > inputCount)
+    return std::nullopt;
+
+  macro.inputs.reserve(inputCount);
+
+  uint64_t p1Frame = 0;
+  uint64_t p2Frame = 0;
+  bool hasInputExtensions = !inputTag.empty();
+
+  for (size_t i = 0; i < inputCount; ++i) {
+    uint64_t packed = 0;
+    if (!reader.readVarint(packed))
+      return std::nullopt;
+
+    bool player2 = i >= p1InputCount;
+    uint64_t &frameBase = player2 ? p2Frame : p1Frame;
+
+    uint64_t delta = platformer ? (packed >> 3) : (packed >> 1);
+    int button = platformer ? static_cast<int>((packed >> 1) & 0b11) : 1;
+    bool down = (packed & 1) != 0;
+
+    frameBase += delta;
+    macro.inputs.emplace_back(static_cast<int>(frameBase), button, player2,
+                              down);
+
+    if (hasInputExtensions) {
+      size_t inputExtensionSize = 0;
+      if (!reader.readVarint(inputExtensionSize) ||
+          !reader.skip(inputExtensionSize))
+        return std::nullopt;
+    }
+  }
+
+  macro.lastRecordedFrame =
+      macro.inputs.empty() ? 0 : static_cast<int>(macro.inputs.back().frame);
+  macro.xdBotMacro = macro.botInfo.name == "xdBot";
+
+  return macro;
 }
 
 void Macro::resetVariables() {
