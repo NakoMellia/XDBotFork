@@ -3,7 +3,6 @@
 * Added `.gdr2` macro import support.
 * Added built-in custom keybind support for opening the menu and toggling the macro.
 * Added a warning toast for legacy `.gdr` macros not recorded with xdBot.
-* Fixed imported `.gdr2` macros not playing correctly after loading.
 * Fixed mobile render settings so audio args and volume can be changed.
 * Removed the render warning/block for CBF.
 * Removed PathFinder Test.

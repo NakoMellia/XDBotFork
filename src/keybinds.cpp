@@ -118,7 +118,7 @@ void handleToggleMacroKeybind(Keybind const&, bool down, bool repeat, double) {
 
 } // namespace
 
-$execute {
+$on_mod(Loaded) {
   geode::listenForKeybindSettingPresses(
       "keybind_open_menu",
       +[](Keybind const &keybind, bool down, bool repeat, double timestamp) {

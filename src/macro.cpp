@@ -116,22 +116,6 @@ void Macro::recordAction(int frame, int button, bool player2, bool hold) {
   g.macro.inputs.push_back(input(frame, button, player2, hold));
 }
 
-void Macro::parseExtension(gdr::json::object_t obj) {
-  if (obj.contains("forceFrameTiming") && !obj["forceFrameTiming"].is_null())
-    forceFrameTiming = obj["forceFrameTiming"];
-
-  xdBotMacro = botInfo.name == "xdBot" || forceFrameTiming;
-}
-
-gdr::json::object_t Macro::saveExtension() const {
-  gdr::json::object_t obj;
-
-  if (forceFrameTiming)
-    obj["forceFrameTiming"] = true;
-
-  return obj;
-}
-
 void Macro::recordFrameFix(int frame, PlayerObject *p1, PlayerObject *p2) {
   float p1Rotation = p1->getRotation();
   float p2Rotation = p2->getRotation();
@@ -435,7 +419,6 @@ std::optional<Macro> Macro::importGDR2(
     return std::nullopt;
 
   Macro macro;
-  macro.forceFrameTiming = true;
   std::string inputTag;
 
   int gameVersion = 0;
@@ -517,12 +500,9 @@ std::optional<Macro> Macro::importGDR2(
     }
   }
 
-  std::sort(macro.inputs.begin(), macro.inputs.end(),
-            [](input const &a, input const &b) { return a.frame < b.frame; });
-
   macro.lastRecordedFrame =
       macro.inputs.empty() ? 0 : static_cast<int>(macro.inputs.back().frame);
-  macro.xdBotMacro = true;
+  macro.xdBotMacro = macro.botInfo.name == "xdBot";
 
   return macro;
 }

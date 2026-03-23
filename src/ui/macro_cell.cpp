@@ -182,7 +182,7 @@ void MacroCell::handleLoad() {
 	g.restart = true;
 	g.macro.canChangeFPS = false;
 
-    g.macro.xdBotMacro = g.macro.botInfo.name == "xdBot" || g.macro.forceFrameTiming;
+    g.macro.xdBotMacro = g.macro.botInfo.name == "xdBot";
 	bool legacyGdrMacro = path.extension() == ".gdr" && !g.macro.xdBotMacro;
 
 	loadLayer->setKeypadEnabled(false);
