@@ -302,7 +302,7 @@ void RecordLayer::togglePlaying(CCObject *) {
     g.currentAction = 0;
     g.currentFrameFix = 0;
 
-    g.macro.xdBotMacro = g.macro.botInfo.name == "xdBot";
+    g.macro.xdBotMacro = g.macro.botInfo.name == "xdBot" || g.macro.forceFrameTiming;
 
     PlayLayer *pl = PlayLayer::get();
 

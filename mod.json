@@ -11,13 +11,6 @@
 	"developer": "Zilko & Camellia",
 	"description": "XDBot port for 2.2081",
 	"dependencies": {
-		"geode.custom-keybinds": {
-			"version": ">=v2.0.0",
-			"importance": "required",
-			"platforms": [
-				"win"
-			]
-		},
 		"eclipse.ffmpeg-api": {
 			"version": ">=v2.0.0",
 			"importance": "required",
@@ -31,6 +24,22 @@
 		"button-setting": {
 			"type": "custom:button",
 			"name": "Open Menu"
+		},
+		"keybinds-title": {
+			"type": "title",
+			"name": "Keybinds"
+		},
+		"keybind_open_menu": {
+			"type": "keybind",
+			"name": "Open Menu",
+			"description": "Opens or closes the xdBot menu.",
+			"default": "Alt"
+		},
+		"keybind_toggle_macro": {
+			"type": "keybind",
+			"name": "Toggle Macro",
+			"description": "Turns macro playback on or off.",
+			"default": "P"
 		},
 		"macro_accuracy": {
 			"type": "string",

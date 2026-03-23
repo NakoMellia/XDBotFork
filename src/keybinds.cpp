@@ -8,6 +8,7 @@
 #include "ui/record_layer.hpp"
 #include "ui/render_settings_layer.hpp"
 
+#include <Geode/loader/SettingV3.hpp>
 #include <Geode/modify/CCKeyboardDispatcher.hpp>
 #include <Geode/modify/CCTouchDispatcher.hpp>
 
@@ -74,117 +75,59 @@ class $modify(CCKeyboardDispatcher) {
   }
 };
 
-// ======================================================================
-// custom-keybinds is incompatible with Geode v5 (EventFilter/EventListener
-// removed).
-// TODO: Migrate to Geode v5 built-in KeybindSettingV3 system.
-// All code below is disabled until migration is complete.
-// ======================================================================
-#if 0
+namespace {
 
-#ifdef GEODE_IS_ANDROID
+bool shouldHandleXdBotKeybind(bool down, bool repeat) {
+  auto &g = Global::get();
 
-namespace keybinds {
+  if (!down || repeat)
+    return false;
 
-  struct ActionID {};
+  if (g.mod->getSettingValue<bool>("disable_keybinds"))
+    return false;
 
-};
+  if (LevelEditorLayer::get() && !g.mod->getSettingValue<bool>("editor_keybinds"))
+    return false;
 
-#endif
+  if (g.state != state::recording &&
+      g.mod->getSettingValue<bool>("recording_only_keybinds"))
+    return false;
 
-using namespace keybinds;
-
-void onKeybind(bool down, ActionID id) {
-#ifdef GEODE_IS_WINDOWS
-
-  auto& g = Global::get();
-
-  if (!down || (LevelEditorLayer::get() && !g.mod->getSettingValue<bool>("editor_keybinds")) || g.mod->getSettingValue<bool>("disable_keybinds"))
-    return;
-
-  if (g.state != state::recording && g.mod->getSettingValue<bool>("recording_only_keybinds"))
-    return;
-
-  if (id == "open_menu"_spr) {
-    if (g.layer) {
-      static_cast<RecordLayer*>(g.layer)->onClose(nullptr);
-      return;
-    }
-
-    RecordLayer::openMenu();
-  }
-
-  if (id == "toggle_recording"_spr)
-    Macro::toggleRecording();
-
-  if (id == "toggle_playing"_spr)
-    Macro::togglePlaying();
-
-  if (id == "toggle_frame_stepper"_spr && PlayLayer::get())
-    Global::toggleFrameStepper();
-
-  if (id == "step_frame"_spr)
-    Global::frameStep();
-
-  if (id == "toggle_speedhack"_spr)
-    Global::toggleSpeedhack();
-
-  if (id == "show_trajectory"_spr) {
-    g.mod->setSavedValue("macro_show_trajectory", !g.mod->getSavedValue<bool>("macro_show_trajectory"));
-
-    if (g.layer) {
-      if (static_cast<RecordLayer*>(g.layer)->trajectoryToggle)
-        static_cast<RecordLayer*>(g.layer)->trajectoryToggle->toggle(g.mod->getSavedValue<bool>("macro_show_trajectory"));
-    }
-
-    g.showTrajectory = g.mod->getSavedValue<bool>("macro_show_trajectory");
-    if (!g.showTrajectory) ShowTrajectory::trajectoryOff();
-  }
-
-  if (id == "toggle_render"_spr && PlayLayer::get()) {
-    bool result = Renderer::toggle();
-
-    if (result && Global::get().renderer.recording)
-      Notification::create("Started Rendering", NotificationIcon::Info)->show();
-
-    if (g.layer) {
-      if (static_cast<RecordLayer*>(g.layer)->renderToggle)
-        static_cast<RecordLayer*>(g.layer)->renderToggle->toggle(Global::get().renderer.recording);
-    }
-
-  }
-
-  if (id == "toggle_noclip"_spr) {
-    g.mod->setSavedValue("macro_noclip", !g.mod->getSavedValue<bool>("macro_noclip"));
-
-    if (g.layer) {
-      if (static_cast<RecordLayer*>(g.layer)->noclipToggle)
-        static_cast<RecordLayer*>(g.layer)->noclipToggle->toggle(g.mod->getSavedValue<bool>("macro_noclip"));
-    }
-  }
-
-#endif
-
+  return true;
 }
 
-$execute{
+void handleOpenMenuKeybind(Keybind const&, bool down, bool repeat, double) {
+  if (!shouldHandleXdBotKeybind(down, repeat))
+    return;
 
-#ifdef GEODE_IS_WINDOWS
+  auto &g = Global::get();
+  if (g.layer) {
+    static_cast<RecordLayer *>(g.layer)->onClose(nullptr);
+    return;
+  }
 
-    BindManager * bm = BindManager::get();
-
-    bm->registerBindable({
-        "open_menu"_spr,
-        "Open Menu",
-        "Open Menu.",
-        { keybinds::Keybind::create(KEY_F, Modifier::Alt) },
-        "xdBot",
-        false
-    });
-
-    // ... (all other registerBindable calls) ...
-
-#endif
+  RecordLayer::openMenu();
 }
 
-#endif // #if 0
+void handleToggleMacroKeybind(Keybind const&, bool down, bool repeat, double) {
+  if (!shouldHandleXdBotKeybind(down, repeat))
+    return;
+
+  Macro::togglePlaying();
+}
+
+} // namespace
+
+$execute {
+  geode::listenForKeybindSettingPresses(
+      "keybind_open_menu",
+      +[](Keybind const &keybind, bool down, bool repeat, double timestamp) {
+        handleOpenMenuKeybind(keybind, down, repeat, timestamp);
+      });
+
+  geode::listenForKeybindSettingPresses(
+      "keybind_toggle_macro",
+      +[](Keybind const &keybind, bool down, bool repeat, double timestamp) {
+        handleToggleMacroKeybind(keybind, down, repeat, timestamp);
+      });
+}

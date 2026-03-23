@@ -44,6 +44,11 @@ public:
     bool canChangeFPS = true;
     uintptr_t seed = 0;
     bool xdBotMacro = true;
+    bool forceFrameTiming = false;
+
+    void parseExtension(gdr::json::object_t obj) override;
+
+    gdr::json::object_t saveExtension() const override;
 
     static void recordAction(int frame, int button, bool player2, bool hold);
 
