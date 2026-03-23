@@ -204,7 +204,7 @@ void MacroCell::handleLoad() {
 		FLAlertLayer::create("Warning", "<cl>.xd</c> extension macros may not function correctly in this version.", "Ok")->show();
 
 	if (legacyGdrMacro)
-		Notification::create("Using Legacy .gdr format.  Trajectory can be broken",
+		Notification::create("Using Legacy .gdr format. Trajectory can be broken",
 							 NotificationIcon::Warning)
 			->show();
 

@@ -73,9 +73,19 @@ void applyGhostStyle(PlayerObject *ghost) {
   ghost->setZOrder(490);
 }
 
-void syncGhostGameMode(PlayerObject *ghost, PlayerData const &data) {
-  if (!ghost)
+void syncGhostVisuals(PlayerObject *ghost, PlayerObject *realPlayer,
+                      PlayerData const &data) {
+  if (!ghost || !realPlayer)
     return;
+
+  // Reset toggled modes first so the ghost doesn't get stuck in a previous
+  // game mode when the current frame is cube / ship / mini / normal.
+  ghost->toggleBirdMode(false, true);
+  ghost->toggleRollMode(false, true);
+  ghost->toggleDartMode(false, true);
+  ghost->toggleRobotMode(false, true);
+  ghost->toggleSpiderMode(false, true);
+  ghost->toggleSwingMode(false, true);
 
   ghost->toggleBirdMode(data.m_isBird, true);
   ghost->toggleRollMode(data.m_isBall, true);
@@ -91,6 +101,16 @@ void syncGhostGameMode(PlayerObject *ghost, PlayerData const &data) {
   ghost->m_isRobot = data.m_isRobot;
   ghost->m_isSpider = data.m_isSpider;
   ghost->m_isSwing = data.m_isSwing;
+  ghost->m_isUpsideDown = data.m_isUpsideDown;
+  ghost->m_vehicleSize = data.m_vehicleSize;
+  ghost->m_hasGlow = data.m_hasGlow;
+  ghost->m_playerStreak = data.m_playerStreak;
+
+  // Copy live transform data from the real player so mini / gravity /
+  // sideways presentation matches the current portal state.
+  ghost->setScaleX(realPlayer->getScaleX());
+  ghost->setScaleY(realPlayer->getScaleY());
+  ghost->setScale(realPlayer->getScale());
 
   ghost->updatePlayerScale();
   ghost->updatePlayerFrame(data.m_iconRequestID);
@@ -100,6 +120,12 @@ void syncGhostGameMode(PlayerObject *ghost, PlayerData const &data) {
   ghost->updatePlayerDartFrame(data.m_iconRequestID);
   ghost->updatePlayerSpiderFrame(data.m_iconRequestID);
   ghost->updatePlayerSwingFrame(data.m_iconRequestID);
+
+  // Force-refresh animation state for robot / spider / swing / ship instead of
+  // leaving the ghost on a static frame.
+  ghost->update(0.f);
+  ghost->updateRotation(0.f);
+  ghost->updatePlayerScale();
 }
 } // namespace
 
@@ -144,7 +170,7 @@ void ShowTrajectory::updateGhost(PlayLayer *pl) {
   if (auto sampled = sampleGhostFrame(g.macro.frameFixes, frame, false)) {
     PlayerData playerData = PlayerPracticeFixes::saveData(pl->m_player1);
     PlayerPracticeFixes::applyData(t.ghostPlayer1, playerData, false, true);
-    syncGhostGameMode(t.ghostPlayer1, playerData);
+    syncGhostVisuals(t.ghostPlayer1, pl->m_player1, playerData);
     t.ghostPlayer1->setPosition(sampled->pos);
     if (sampled->rotate)
       t.ghostPlayer1->setRotation(sampled->rotation);
@@ -157,7 +183,7 @@ void ShowTrajectory::updateGhost(PlayLayer *pl) {
     if (auto sampled = sampleGhostFrame(g.macro.frameFixes, frame, true)) {
       PlayerData playerData = PlayerPracticeFixes::saveData(pl->m_player2);
       PlayerPracticeFixes::applyData(t.ghostPlayer2, playerData, true, true);
-      syncGhostGameMode(t.ghostPlayer2, playerData);
+      syncGhostVisuals(t.ghostPlayer2, pl->m_player2, playerData);
       t.ghostPlayer2->setPosition(sampled->pos);
       if (sampled->rotate)
         t.ghostPlayer2->setRotation(sampled->rotation);
