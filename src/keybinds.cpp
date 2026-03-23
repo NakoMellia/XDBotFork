@@ -11,6 +11,7 @@
 #include <Geode/loader/SettingV3.hpp>
 #include <Geode/modify/CCKeyboardDispatcher.hpp>
 #include <Geode/modify/CCTouchDispatcher.hpp>
+#include <Geode/modify/UILayer.hpp>
 
 // NOTE: geode.custom-keybinds is incompatible with Geode v5
 // (EventFilter/EventListener removed).
@@ -118,16 +119,23 @@ void handleToggleMacroKeybind(Keybind const&, bool down, bool repeat, double) {
 
 } // namespace
 
-$on_mod(Loaded) {
-  geode::listenForKeybindSettingPresses(
-      "keybind_open_menu",
-      +[](Keybind const &keybind, bool down, bool repeat, double timestamp) {
-        handleOpenMenuKeybind(keybind, down, repeat, timestamp);
-      });
+class $modify(UILayer) {
+  bool init(GJBaseGameLayer *layer) {
+    if (!UILayer::init(layer))
+      return false;
 
-  geode::listenForKeybindSettingPresses(
-      "keybind_toggle_macro",
-      +[](Keybind const &keybind, bool down, bool repeat, double timestamp) {
-        handleToggleMacroKeybind(keybind, down, repeat, timestamp);
-      });
-}
+    this->addEventListener(
+        KeybindSettingPressedEventV3(Mod::get(), "keybind_open_menu"),
+        [=](Keybind const &keybind, bool down, bool repeat, double timestamp) {
+          handleOpenMenuKeybind(keybind, down, repeat, timestamp);
+        });
+
+    this->addEventListener(
+        KeybindSettingPressedEventV3(Mod::get(), "keybind_toggle_macro"),
+        [=](Keybind const &keybind, bool down, bool repeat, double timestamp) {
+          handleToggleMacroKeybind(keybind, down, repeat, timestamp);
+        });
+
+    return true;
+  }
+};
