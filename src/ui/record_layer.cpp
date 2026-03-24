@@ -61,7 +61,7 @@ const std::vector<std::vector<RecordSetting>> settings{
         {"Ignore inputs:", "macro_ignore_inputs", InputType::None},
         {"Show Frame Label:", "macro_show_frame_label", InputType::None},
         {"Enable Frame Stepper:", "macro_frame_stepper", InputType::None}
-        // { "Auto Stop Playing:", "macro_auto_stop_playing", InputType::None }
+
     },
     {{"Respawn Time:", "respawn_time_enabled", InputType::Respawn},
      {"Input Mirror:", "p2_input_mirror", InputType::Settings, 0.325f,
@@ -284,12 +284,10 @@ void RecordLayer::toggleContinue(CCObject *) {
   if (Global::hasIncompatibleMods())
     return;
 
-  // Set the frame at which to switch from playing to recording
   g.continueFrame = g.macro.lastRecordedFrame;
   g.continueBotting = true;
   g.continueBottingSpeedhack = true;
 
-  // Start playback
   if (g.state != state::playing) {
     playing->toggle(true);
     togglePlaying(nullptr);
@@ -357,7 +355,7 @@ void RecordLayer::toggleRender(CCObject *btn) {
 
 void RecordLayer::onEditMacro(CCObject *) { MacroEditLayer::open(); }
 
-void RecordLayer::toggleFPS(bool on) { // forgotten
+void RecordLayer::toggleFPS(bool on) {
   return;
   float scaleSpr = -0.8, scaleBtn = -1;
   int opacityBtn = 57, opacityLbl = 80;
@@ -497,8 +495,6 @@ void RecordLayer::toggleSetting(CCObject *obj) {
 
   g.mod->setSavedValue(id, value);
 
-  // Some of these get checked every frame so idk i didnt want to do
-  // mod->getSavedValue<bool> every time
   if (id == "macro_seed_enabled")
     g.seedEnabled = value;
   if (id == "macro_speedhack_enabled")
@@ -710,8 +706,6 @@ bool RecordLayer::setup() {
   auto &g = Global::get();
   mod = g.mod;
 
-  // Utils::setBackgroundColor(m_bgSprite);
-
   cocos2d::CCPoint offset = (CCDirector::sharedDirector()->getWinSize() -
                              m_mainLayer->getContentSize()) /
                             2;
@@ -865,7 +859,6 @@ bool RecordLayer::setup() {
   lbl->setScale(0.325f);
   menu->addChild(lbl);
 
-  // NakoMod: Continue Botting button
   {
     auto continueSprite = ButtonSprite::create("Continue", "goldFont.fnt",
                                                "GJ_button_01.png", 0.8f);
@@ -873,7 +866,7 @@ bool RecordLayer::setup() {
     continueBtn = CCMenuItemSpriteExtra::create(
         continueSprite, this, menu_selector(RecordLayer::toggleContinue));
     continueBtn->setPosition(ccp(-116.5, 54));
-    // Only show if macro has a lastRecordedFrame
+
     continueBtn->setVisible(g.macro.lastRecordedFrame > 0 &&
                             !g.macro.inputs.empty());
     menu->addChild(continueBtn);
@@ -946,7 +939,7 @@ bool RecordLayer::setup() {
   widthInput = CCTextInputNode::create(150, 30, "Width", "chatFont.fnt");
   widthInput->m_textField->setAnchorPoint({0.5f, 0.5f});
   widthInput->ignoreAnchorPointForPosition(true);
-  // widthInput->m_placeholderLabel->setAnchorPoint({ 0.5f, 0.5f });
+
   widthInput->setPosition(ccp(-157, -31));
   widthInput->setMaxLabelScale(0.7f);
   widthInput->setMouseEnabled(true);
@@ -962,7 +955,7 @@ bool RecordLayer::setup() {
   heightInput = CCTextInputNode::create(150, 30, "Height", "chatFont.fnt");
   heightInput->m_textField->setAnchorPoint({0.5f, 0.5f});
   heightInput->ignoreAnchorPointForPosition(true);
-  // heightInput->m_placeholderLabel->setAnchorPoint({ 0.5f, 0.5f });
+
   heightInput->setPosition(ccp(-72.5, -31));
   heightInput->setMaxLabelScale(0.7f);
   heightInput->setMouseEnabled(true);
@@ -978,7 +971,7 @@ bool RecordLayer::setup() {
   bitrateInput = CCTextInputNode::create(150, 30, "br", "chatFont.fnt");
   bitrateInput->m_textField->setAnchorPoint({0.5f, 0.5f});
   bitrateInput->ignoreAnchorPointForPosition(true);
-  // bitrateInput->m_placeholderLabel->setAnchorPoint({ 0.5f, 0.5f });
+
   bitrateInput->setPosition(ccp(-185.5, -59));
   bitrateInput->setMaxLabelScale(0.7f);
   bitrateInput->setMouseEnabled(true);
@@ -1017,7 +1010,7 @@ bool RecordLayer::setup() {
   codecInput = CCTextInputNode::create(150, 30, "Codec", "chatFont.fnt");
   codecInput->m_textField->setAnchorPoint({0.5f, 0.5f});
   codecInput->ignoreAnchorPointForPosition(true);
-  // codecInput->m_placeholderLabel->setAnchorPoint({ 0.5f, 0.5f });
+
   codecInput->setPosition(ccp(-70.5, -62));
   codecInput->setMouseEnabled(true);
   codecInput->setTouchEnabled(true);
@@ -1033,8 +1026,7 @@ bool RecordLayer::setup() {
   fpsInput = CCTextInputNode::create(150, 30, "FPS", "chatFont.fnt");
   fpsInput->m_textField->setAnchorPoint({0.5f, 0.5f});
   fpsInput->ignoreAnchorPointForPosition(true);
-  // fpsInput->m_placeholderLabel->setAnchorPoint({ 0.5f, 0.5f });
-  // fpsInput->m_placeholderLabel->setScale(0.6);
+
   fpsInput->setPosition(ccp(-133, -59));
   fpsInput->setMaxLabelScale(0.7f);
   fpsInput->setMouseEnabled(true);
@@ -1195,10 +1187,6 @@ void RecordLayer::loadSetting(RecordSetting sett, float yPos) {
       CCSprite::createWithSpriteFrameName("GJ_checkOff_001.png");
   float toggleScale = 0.555f;
 
-  if (sett.disabled) {
-    // Code when disabled xD!
-  }
-
   CCMenuItemToggler *toggle = CCMenuItemToggler::create(
       spriteOff, spriteOn, this, menu_selector(RecordLayer::toggleSetting));
   toggle->setPosition(ccp(175, yPos));
@@ -1264,8 +1252,7 @@ void RecordLayer::loadSetting(RecordSetting sett, float yPos) {
     speedhackInput->setPosition(ccp(127.5, yPos));
     speedhackInput->m_textField->setAnchorPoint({0.5f, 0.5f});
     speedhackInput->ignoreAnchorPointForPosition(true);
-    // speedhackInput->m_placeholderLabel->setAnchorPoint({ 0.5f, 0.5f });
-    // speedhackInput->m_placeholderLabel->setScale(0.6);
+
     speedhackInput->setMaxLabelScale(0.7f);
     speedhackInput->setMouseEnabled(true);
     speedhackInput->setTouchEnabled(true);
@@ -1330,8 +1317,7 @@ void RecordLayer::loadSetting(RecordSetting sett, float yPos) {
     tpsInput->setPosition(ccp(133.5, yPos));
     tpsInput->m_textField->setAnchorPoint({0.5f, 0.5f});
     tpsInput->ignoreAnchorPointForPosition(true);
-    // tpsInput->m_placeholderLabel->setAnchorPoint({ 0.5f, 0.5f });
-    // tpsInput->m_placeholderLabel->setScale(0.6);
+
     tpsInput->setMaxLabelScale(0.7f);
     tpsInput->setMouseEnabled(true);
     tpsInput->setTouchEnabled(true);
@@ -1367,8 +1353,7 @@ void RecordLayer::loadSetting(RecordSetting sett, float yPos) {
     seedInput->setPosition(ccp(109.5, yPos));
     seedInput->m_textField->setAnchorPoint({0.5f, 0.5f});
     seedInput->ignoreAnchorPointForPosition(true);
-    // seedInput->m_placeholderLabel->setAnchorPoint({ 0.5f, 0.5f });
-    // seedInput->m_placeholderLabel->setScale(0.6);
+
     seedInput->setMaxLabelScale(0.7f);
     seedInput->setMouseEnabled(true);
     seedInput->setTouchEnabled(true);
@@ -1400,8 +1385,7 @@ void RecordLayer::loadSetting(RecordSetting sett, float yPos) {
     respawnInput->setPosition(ccp(127.5, yPos));
     respawnInput->m_textField->setAnchorPoint({0.5f, 0.5f});
     respawnInput->ignoreAnchorPointForPosition(true);
-    // respawnInput->m_placeholderLabel->setAnchorPoint({ 0.5f, 0.5f });
-    // respawnInput->m_placeholderLabel->setScale(0.6);
+
     respawnInput->setMaxLabelScale(0.7f);
     respawnInput->setMouseEnabled(true);
     respawnInput->setTouchEnabled(true);
@@ -1503,7 +1487,6 @@ void RecordLayer::updateTPS() {
     tpsInput->setID("");
     tpsBg->setOpacity(75);
     tpsToggle->setEnabled(true);
-    // tpsInput->m_placeholderLabel->setOpacity(255);
 
     tpsInput->detachWithIME();
     tpsInput->onClickTrackNode(false);
@@ -1521,7 +1504,6 @@ void RecordLayer::updateTPS() {
     tpsInput->setID("disabled-input"_spr);
     tpsBg->setOpacity(30);
     tpsToggle->setEnabled(false);
-    // tpsInput->m_placeholderLabel->setOpacity(120);
 
     tpsInput->detachWithIME();
     tpsInput->onClickTrackNode(false);

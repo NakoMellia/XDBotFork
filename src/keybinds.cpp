@@ -1,4 +1,3 @@
-
 #include "hacks/layout_mode.hpp"
 #include "hacks/show_trajectory.hpp"
 #include "includes.hpp"
@@ -11,14 +10,6 @@
 #include <Geode/loader/SettingV3.hpp>
 #include <Geode/modify/CCKeyboardDispatcher.hpp>
 #include <Geode/modify/CCTouchDispatcher.hpp>
-
-// NOTE: geode.custom-keybinds is incompatible with Geode v5
-// (EventFilter/EventListener removed).
-// TODO: Migrate to Geode v5 built-in KeybindSettingV3 system.
-// #ifdef GEODE_IS_WINDOWS
-// #include <geode.custom-keybinds/include/Keybinds.hpp>
-// #include <regex>
-// #endif
 
 const std::vector<std::string> keybindIDs = {
     "open_menu",        "toggle_recording",     "toggle_playing",
@@ -40,24 +31,6 @@ class $modify(CCKeyboardDispatcher) {
       }
     }
 
-    // if (key == enumKeyCodes::KEY_L && !isKeyRepeat && isKeyDown) {
-    // }
-
-    // if (key == enumKeyCodes::KEY_F && !isKeyRepeat && isKeyDown &&
-    // PlayLayer::get()) {
-    //   log::debug("POS DEBUG {}", PlayLayer::get()->m_player1->getPosition());
-    //   log::debug("POS2 DEBUG {}",
-    //   PlayLayer::get()->m_player2->getPosition());
-    // }
-
-    // if (key == enumKeyCodes::KEY_J && !isKeyRepeat && isKeyDown &&
-    // PlayLayer::get()) {
-    //   std::string str =
-    //   ZipUtils::decompressString(PlayLayer::get()->m_level->m_levelString.c_str(),
-    //   true, 0); log::debug("{}", str);
-    // }
-
-    // NakoMod: Swift Click handling
     if (g.swiftClickEnabled && !isKeyRepeat && isKeyDown &&
         keyInt == g.swiftClickKey && PlayLayer::get() &&
         (g.state == state::recording || g.state == state::none)) {
@@ -104,7 +77,7 @@ void handleToggleMacroKeybind(Keybind const&, bool down, bool repeat, double) {
   Macro::togglePlaying();
 }
 
-} // namespace
+}
 
 $on_mod(Loaded) {
   geode::listenForKeybindSettingPresses(

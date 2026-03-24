@@ -106,7 +106,7 @@ public:
   std::vector<InputType> inputs;
   std::vector<FrameFix> frameFixes;
 
-  int lastRecordedFrame = 0; // NakoMod: Continue Botting
+  int lastRecordedFrame = 0;
 
   uint32_t frameForTime(double time) {
     return static_cast<uint32_t>(time * (double)framerate);
@@ -129,12 +129,6 @@ public:
       if (replayJson.is_discarded())
         return replay;
     }
-
-    // try {
-    // 	replayJson = json::from_msgpack(data);
-    // } catch(std::exception& e) {
-    // 	replayJson = json::parse(data);
-    // }
 
     if (!replayJson["gameVersion"].is_null())
       replay.gameVersion = replayJson["gameVersion"];
@@ -176,7 +170,6 @@ public:
     if (replay.botInfo.name == "xdBot" && ver == "v2.0.0")
       rotation = true;
 
-    // bool offset = false;
     int offset = replay.botInfo.name == "xdBot" ? 1 : 0;
 
     if (offset == 1) {
@@ -351,4 +344,4 @@ public:
   }
 };
 
-} // namespace gdr
+}

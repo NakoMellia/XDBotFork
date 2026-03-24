@@ -31,7 +31,6 @@ private:
     m_title->setScale(0.625f);
     m_title->setPositionY(136);
 
-    // Swift Count
     CCLabelBMFont *lbl = CCLabelBMFont::create("Click Count", "bigFont.fnt");
     lbl->setPosition({m_size.width / 2, 110});
     lbl->setScale(0.35f);
@@ -47,7 +46,6 @@ private:
     countInput->getInputNode()->setMaxLabelLength(2);
     m_mainLayer->addChild(countInput);
 
-    // Key Code
     lbl = CCLabelBMFont::create("Key Code", "bigFont.fnt");
     lbl->setPosition({m_size.width / 2, 68});
     lbl->setScale(0.35f);

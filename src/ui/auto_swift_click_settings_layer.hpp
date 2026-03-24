@@ -28,7 +28,6 @@ private:
     m_title->setScale(0.55f);
     m_title->setPositionY(106);
 
-    // Click Count
     CCLabelBMFont *lbl = CCLabelBMFont::create("Clicks / Press", "bigFont.fnt");
     lbl->setPosition({m_size.width / 2, 80});
     lbl->setScale(0.35f);

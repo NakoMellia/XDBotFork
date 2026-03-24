@@ -44,7 +44,7 @@ void RenderSettingsLayer::onDefaults(CCObject*) {
         "Cancel", "Yes",
         [this](auto, bool btn2) {
             auto& g = Global::get();
-            
+
             g.mod->setSavedValue("render_args", std::string("-pix_fmt yuv420p"));
 	        g.mod->setSavedValue("render_audio_args", std::string(""));
             #ifdef GEODE_IS_WINDOWS
@@ -92,10 +92,8 @@ bool RenderSettingsLayer::setup() {
     m_closeBtn->setPosition(m_closeBtn->getPosition() + offset);
     m_bgSprite->setPosition(m_bgSprite->getPosition() + offset);
     m_title->setPosition(m_title->getPosition() + offset);
-    
+
     mod = Mod::get();
-    
-    // Utils::setBackgroundColor(m_bgSprite);
 
     if (mod->getSavedValue<std::string>("render_seconds_after") == "")
         mod->setSavedValue("render_seconds_after", std::to_string(0));
@@ -129,7 +127,7 @@ bool RenderSettingsLayer::setup() {
     argsInput = CCTextInputNode::create(150, 30, "args", "chatFont.fnt");
     argsInput->m_textField->setAnchorPoint({ 0.5f, 0.5f });
     argsInput->ignoreAnchorPointForPosition(true);
-    // argsInput->m_placeholderLabel->setAnchorPoint({ 0.5f, 0.5f });
+
     argsInput->setPosition(ccp(25, 86));
     argsInput->setLabelPlaceholderColor(ccc3(163, 135, 121));
     argsInput->setMouseEnabled(true);
@@ -150,18 +148,18 @@ bool RenderSettingsLayer::setup() {
     bg->setAnchorPoint({ 0, 1 });
     bg->setContentSize({ 401, 55 });
     menu->addChild(bg);
-    
+
     lbl = CCLabelBMFont::create("Audio Args:", "bigFont.fnt");
     lbl->setPosition(ccp(-105, 55));
     lbl->setAnchorPoint({ 0, 0.5 });
     lbl->setOpacity(200);
     lbl->setScale(0.325);
     menu->addChild(lbl);
-    
+
     audioArgsInput = CCTextInputNode::create(150, 30, "audio args", "chatFont.fnt");
     audioArgsInput->m_textField->setAnchorPoint({ 0.5f, 0.5f });
     audioArgsInput->ignoreAnchorPointForPosition(true);
-    // audioArgsInput->m_placeholderLabel->setAnchorPoint({ 0.5f, 0.5f });
+
     audioArgsInput->setPosition(ccp(18, 53));
     audioArgsInput->setLabelPlaceholderColor(ccc3(163, 135, 121));
     audioArgsInput->setMouseEnabled(true);
@@ -195,7 +193,7 @@ bool RenderSettingsLayer::setup() {
     videoArgsInput = CCTextInputNode::create(150, 30, "video args", "chatFont.fnt");
     videoArgsInput->m_textField->setAnchorPoint({ 0.5f, 0.5f });
     videoArgsInput->ignoreAnchorPointForPosition(true);
-    // videoArgsInput->m_placeholderLabel->setAnchorPoint({ 0.5f, 0.5f });
+
     videoArgsInput->setPosition({19, 22});
     videoArgsInput->setLabelPlaceholderColor(ccc3(163, 135, 121));
     videoArgsInput->setMouseEnabled(true);
@@ -225,7 +223,7 @@ bool RenderSettingsLayer::setup() {
     secondsInput = CCTextInputNode::create(150, 30, "sec", "chatFont.fnt");
     secondsInput->m_textField->setAnchorPoint({ 0.5f, 0.5f });
     secondsInput->ignoreAnchorPointForPosition(true);
-    // secondsInput->m_placeholderLabel->setAnchorPoint({ 0.5f, 0.5f });
+
     secondsInput->setPosition(ccp(50, -8));
     secondsInput->setLabelPlaceholderColor(ccc3(163, 135, 121));
     secondsInput->setMouseEnabled(true);
@@ -251,7 +249,7 @@ bool RenderSettingsLayer::setup() {
     lbl->setOpacity(200);
     lbl->setScale(0.325);
     menu->addChild(lbl);
-    
+
     onlySongToggle = CCMenuItemToggler::create(
         CCSprite::createWithSpriteFrameName("GJ_checkOff_001.png"),
         CCSprite::createWithSpriteFrameName("GJ_checkOn_001.png"),
@@ -268,7 +266,7 @@ bool RenderSettingsLayer::setup() {
     lbl->setOpacity(200);
     lbl->setScale(0.325);
     menu->addChild(lbl);
-    
+
     recordAudioToggle = CCMenuItemToggler::create(
         CCSprite::createWithSpriteFrameName("GJ_checkOff_001.png"),
         CCSprite::createWithSpriteFrameName("GJ_checkOn_001.png"),
@@ -285,7 +283,7 @@ bool RenderSettingsLayer::setup() {
     lbl->setOpacity(200);
     lbl->setScale(0.325);
     menu->addChild(lbl);
-    
+
     if (usingApi) lbl->setOpacity(90);
 
     fadeInInput = TextInput::create(50.f, "s", "bigFont.fnt");
@@ -295,7 +293,7 @@ bool RenderSettingsLayer::setup() {
     fadeInInput->getInputNode()->setDelegate(this);
     fadeInInput->getInputNode()->setAllowedChars("0123456789.");
     menu->addChild(fadeInInput);
-    
+
     CCMenuItemToggler* toggle = CCMenuItemToggler::create(
         CCSprite::createWithSpriteFrameName("GJ_checkOff_001.png"),
         CCSprite::createWithSpriteFrameName("GJ_checkOn_001.png"),
@@ -318,7 +316,7 @@ bool RenderSettingsLayer::setup() {
     lbl->setOpacity(200);
     lbl->setScale(0.325);
     menu->addChild(lbl);
-    
+
     if (usingApi) lbl->setOpacity(90);
 
     lbl = CCLabelBMFont::create("File Extension:", "bigFont.fnt");
@@ -327,7 +325,7 @@ bool RenderSettingsLayer::setup() {
     lbl->setOpacity(200);
     lbl->setScale(0.3f);
     menu->addChild(lbl);
-    
+
     if (usingApi) lbl->setOpacity(90);
 
     extensionInput = TextInput::create(46.f, "", "chatFont.fnt");
@@ -400,7 +398,7 @@ bool RenderSettingsLayer::setup() {
     lbl->setScale(0.475f);
     lbl->setPosition({188, 42});
     menu->addChild(lbl);
-    
+
     sfxSlider = Slider::create(
 		this,
 		menu_selector(RenderSettingsLayer::onSlider),
@@ -416,7 +414,7 @@ bool RenderSettingsLayer::setup() {
     lbl->setScale(0.475f);
     lbl->setPosition({188, 87});
     menu->addChild(lbl);
-    
+
     musicSlider = Slider::create(
 		this,
 		menu_selector(RenderSettingsLayer::onSlider),
@@ -455,20 +453,19 @@ bool RenderSettingsLayer::setup() {
     menu->addChild(btn);
 
     if (usingApi) {
-        // argsInput->m_placeholderLabel->setOpacity(100);
 
         argsInput->setID("disabled-input"_spr);
 
         extensionInput->setEnabled(false);
-        // extensionInput->getInputNode()->m_placeholderLabel->setOpacity(100);
+
         extensionInput->getBGSprite()->setOpacity(40);
 
         fadeOutInput->setEnabled(false);
-        // fadeOutInput->getInputNode()->m_placeholderLabel->setOpacity(100);
+
         fadeOutInput->getBGSprite()->setOpacity(40);
 
         fadeInInput->setEnabled(false);
-        // fadeInInput->getInputNode()->m_placeholderLabel->setOpacity(100);
+
         fadeInInput->getBGSprite()->setOpacity(40);
     }
 

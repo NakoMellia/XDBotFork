@@ -3,17 +3,16 @@
 class NoclipSettingsLayer : public geode::Popup {
 
 private:
-	
+
     bool setup() {
         setTitle("Noclip");
-		
+
 		cocos2d::CCPoint offset = (CCDirector::sharedDirector()->getWinSize() - m_mainLayer->getContentSize()) / 2;
 		m_mainLayer->setPosition(m_mainLayer->getPosition() - offset);
 		m_closeBtn->setPosition(m_closeBtn->getPosition() + offset);
 		m_bgSprite->setPosition(m_bgSprite->getPosition() + offset);
         m_title->setPosition(m_title->getPosition() + offset);
 
-    	// Utils::setBackgroundColor(m_bgSprite);
 		CCMenu* menu = CCMenu::create();
 		m_mainLayer->addChild(menu);
 
@@ -50,7 +49,7 @@ private:
 public:
 
 	STATIC_CREATE(NoclipSettingsLayer, 200, 176)
-	
+
 	void open(CCObject*) {
 		create()->show();
 	}
@@ -60,7 +59,7 @@ public:
 		if (!toggle) return;
 
 		std::string id = toggle->getID();
-		
+
 		Mod::get()->setSavedValue("macro_noclip_" + id, !toggle->isToggled());
 	}
 

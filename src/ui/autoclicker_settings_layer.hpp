@@ -44,7 +44,7 @@ private:
 		holdLbl2->setString(fmt::format("{:.3f}s", dt * g.holdFor2).c_str());
 		releaseLbl2->setString(fmt::format("{:.3f}s", dt * g.releaseFor2).c_str());
 	}
-	
+
     bool setup() {
         setTitle("Autoclicker");
 		m_title->setScale(0.625f);
@@ -61,7 +61,7 @@ private:
 		holdTitle->setPosition({72, 175});
 		holdTitle->setScale(0.37f);
 		m_mainLayer->addChild(holdTitle);
-		
+
 		releaseTitle = CCLabelBMFont::create("Release For", "bigFont.fnt");
 		releaseTitle->setPosition({x, 175});
 		releaseTitle->setScale(0.37f);
@@ -95,8 +95,6 @@ private:
 		releaseInput->getInputNode()->setMaxLabelLength(4);
 		m_mainLayer->addChild(releaseInput);
 
-		// ------------------------
-
 		lbl = CCLabelBMFont::create("Player 2", "goldFont.fnt");
 		lbl->setPosition({m_size.width / 2, 115});
 		lbl->setScale(0.46f);
@@ -106,7 +104,7 @@ private:
 		holdTitle2->setPosition({72, 95});
 		holdTitle2->setScale(0.37f);
 		m_mainLayer->addChild(holdTitle2);
-		
+
 		releaseTitle2 = CCLabelBMFont::create("Release For", "bigFont.fnt");
 		releaseTitle2->setPosition({x, 95});
 		releaseTitle2->setScale(0.37f);
@@ -192,7 +190,7 @@ private:
 		holdLbl->setOpacity(g.autoclickerP1 ? 86 : 23);
 		holdInput->getBGSprite()->setOpacity(g.autoclickerP1 ? 90 : 30);
 		holdInput->setEnabled(g.autoclickerP1);
-		// holdInput->getInputNode()->m_placeholderLabel->setOpacity(g.autoclickerP1 ? 255 : 100);
+
 		if (!g.autoclickerP1) {
 			holdInput->getInputNode()->detachWithIME();
 			holdInput->getInputNode()->onClickTrackNode(false);
@@ -203,7 +201,7 @@ private:
 		holdLbl2->setOpacity(g.autoclickerP2 ? 86 : 23);
 		holdInput2->getBGSprite()->setOpacity(g.autoclickerP2 ? 90 : 30);
 		holdInput2->setEnabled(g.autoclickerP2);
-		// holdInput2->getInputNode()->m_placeholderLabel->setOpacity(g.autoclickerP2 ? 255 : 100);
+
 		if (!g.autoclickerP2) {
 			holdInput2->getInputNode()->detachWithIME();
 			holdInput2->getInputNode()->onClickTrackNode(false);
@@ -214,7 +212,7 @@ private:
 		releaseLbl->setOpacity(g.autoclickerP1 ? 86 : 23);
 		releaseInput->getBGSprite()->setOpacity(g.autoclickerP1 ? 90 : 30);
 		releaseInput->setEnabled(g.autoclickerP1);
-		// releaseInput->getInputNode()->m_placeholderLabel->setOpacity(g.autoclickerP1 ? 255 : 100);
+
 		if (!g.autoclickerP1) {
 			releaseInput->getInputNode()->detachWithIME();
 			releaseInput->getInputNode()->onClickTrackNode(false);
@@ -225,7 +223,7 @@ private:
 		releaseLbl2->setOpacity(g.autoclickerP2 ? 86 : 23);
 		releaseInput2->getBGSprite()->setOpacity(g.autoclickerP2 ? 90 : 30);
 		releaseInput2->setEnabled(g.autoclickerP2);
-		// releaseInput2->getInputNode()->m_placeholderLabel->setOpacity(g.autoclickerP2 ? 255 : 100);
+
 		if (!g.autoclickerP2) {
 			releaseInput2->getInputNode()->detachWithIME();
 			releaseInput2->getInputNode()->onClickTrackNode(false);
@@ -234,7 +232,7 @@ private:
 	}
 
 public:
-	
+
 	void open(CCObject*) {
 		create()->show();
 	}

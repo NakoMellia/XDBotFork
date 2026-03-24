@@ -254,7 +254,6 @@ void Renderer::start() {
   std::string extension =
       mod->getSavedValue<std::string>("render_file_extension");
 
-  // NakoMod: Feature Toggles
   renderer.usingPBOs = mod->getSavedValue<bool>("nakomod_pbo");
   usingMultithreading = mod->getSavedValue<bool>("nakomod_multithreading");
 
@@ -351,7 +350,6 @@ void Renderer::start() {
   settings.m_outputFile = path;
   settings.m_colorspaceFilters = videoArgs;
 
-  // NakoMod: API-specific settings
   if (usingManualVFlip) {
     settings.m_doVerticalFlip = false;
   }
@@ -419,7 +417,7 @@ void Renderer::start() {
       auto res = ffmpeg.init(initSettings);
       if (res.isErr() && !initSettings.m_colorspaceFilters.empty()) {
         std::string err = res.unwrapErr();
-        // Some mobile FFmpeg builds don't support colorspace options.
+
         if (err.find("Could not create colorspace") != std::string::npos ||
             err.find("Option not found") != std::string::npos) {
           initSettings.m_colorspaceFilters = "";
@@ -466,7 +464,6 @@ void Renderer::start() {
 #endif
     }
 
-    // NakoMod: Multithreaded frame pulling
     while (recording || pause || recordingAudio || frameHasData ||
            (!frameQueue.empty() && usingMultithreading)) {
       lock.lock();
@@ -507,7 +504,7 @@ void Renderer::start() {
           process.m_stdin.write(frame.data(), frame.size());
 #endif
       } else {
-        // If the queue is empty, wait slightly before checking again
+
         if (usingMultithreading) {
           std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
@@ -631,7 +628,7 @@ void Renderer::start() {
               log::warn("Failed to rename temp render file.");
           }
         } else
-          log::debug("Fade Out Error xD");
+          log::debug("Fade out error");
       }
 
       if (audioMode == AudioMode::Record) {
@@ -640,7 +637,7 @@ void Renderer::start() {
                               ffmpegPath, recordedAudioFile.string(),
                               tempPathAudio);
 
-        process = subprocess::Popen(command); // Fix ffmpeg not reading it
+        process = subprocess::Popen(command);
         if (process.close()) {
           Loader::get()->queueInMainThread([] {
             FLAlertLayer::create(
@@ -896,11 +893,10 @@ void MyRenderTexture::capture(std::mutex &lock, std::vector<uint8_t> &data,
 
     if (usingPBOs) {
 #ifndef GEODE_IS_MOBILE
-      // Read into current PBO
+
       glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo[pboIndex]);
       glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, 0);
 
-      // Read from next PBO (which has the previous frame)
       glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo[nextPboIndex]);
       GLubyte *src = (GLubyte *)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
       if (src) {
@@ -910,7 +906,6 @@ void MyRenderTexture::capture(std::mutex &lock, std::vector<uint8_t> &data,
       }
       glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 
-      // Swap indices
       pboIndex = (pboIndex + 1) % 2;
       nextPboIndex = (pboIndex + 1) % 2;
 #else
@@ -938,11 +933,10 @@ void MyRenderTexture::capture(std::mutex &lock, std::vector<uint8_t> &data,
     lock.lock();
 
     if (usingPBOs) {
-      // Read into current PBO
+
       glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo[pboIndex]);
       glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, 0);
 
-      // Read from next PBO (which has the previous frame)
       glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo[nextPboIndex]);
       GLubyte *src = (GLubyte *)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
       if (src) {
@@ -952,7 +946,6 @@ void MyRenderTexture::capture(std::mutex &lock, std::vector<uint8_t> &data,
       }
       glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 
-      // Swap indices
       pboIndex = (pboIndex + 1) % 2;
       nextPboIndex = (pboIndex + 1) % 2;
     } else {
@@ -972,24 +965,21 @@ void MyRenderTexture::capture(std::mutex &lock, std::vector<uint8_t> &data,
 
 void Renderer::captureFrame() {
   if (usingMultithreading) {
-    // Prevent RAM from filling up if FFmpeg is significantly slower
+
     while (frameQueue.size() > 30 && recording) {
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
-    // Use a temporary buffer so we can push it quickly
     std::vector<uint8_t> tempFrame(width * height * 3, 0);
     bool tempHasData = false;
 
     if (usingManualVFlip) {
-      // We need an intermediate buffer if flipping manually
-      // because renderer.capture calls glReadPixels which fills a contiguous
-      // buffer.
+
       std::vector<uint8_t> rawBuffer(width * height * 3, 0);
       renderer.capture(lock, rawBuffer, tempHasData);
 
       if (tempHasData) {
-        // Manual VFlip row by row
+
         size_t rowSize = width * 3;
         for (size_t y = 0; y < height; y++) {
           memcpy(tempFrame.data() + y * rowSize,

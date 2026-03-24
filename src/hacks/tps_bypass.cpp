@@ -9,7 +9,7 @@ class $modify(GJBaseGameLayer) {
         if (!g.tpsEnabled) return GJBaseGameLayer::update(dt);
         if (Global::getTPS() == 240.f) return GJBaseGameLayer::update(dt);
         if (!PlayLayer::get()) return GJBaseGameLayer::update(dt);
-        
+
         float newDt = 1.f / Global::getTPS();
 
         if (g.frameStepper) return GJBaseGameLayer::update(newDt);
@@ -29,7 +29,7 @@ class $modify(GJBaseGameLayer) {
         }
 
         g.leftOver += (dt - newDt * mult);
-        
+
     }
 
     float getModifiedDelta(float dt) {
@@ -43,9 +43,9 @@ class $modify(GJBaseGameLayer) {
         double dVar4;
 
         float newDt = 1.f / Global::getTPS();
-        
+
         if (0 < m_resumeTimer) {
-            // cocos2d::CCDirector::sharedDirector();
+
             m_resumeTimer--;
             dt = 0.0;
         }

@@ -4,11 +4,6 @@
 #include <Geode/modify/CCTextInputNode.hpp>
 #include <Geode/binding/LevelEditorLayer.hpp>
 
-#ifdef GEODE_IS_WINDOWS
-// #include <geode.custom-keybinds/include/Keybinds.hpp> // incompatible with
-// Geode v5
-#endif
-
 #include <random>
 
 class $modify(CCTextInputNode) {
@@ -37,7 +32,7 @@ struct IncompatibleMod {
 const std::vector<IncompatibleMod> incompatibleMods{
     {"alphalaneous.click_after_frames", true, {{"soft-toggle", false, true}}},
     {"thesillydoggo.qolmod", true, {{"tps-bypass_enabled", true, false, true}}},
-    // { "zmx.cbf-lite", false, {  } }
+
 };
 
 bool Global::hasIncompatibleMods() {
@@ -199,24 +194,7 @@ int Global::getCurrentFrame(bool editor) {
   return frame;
 }
 
-void Global::updateKeybinds() {
-#ifdef GEODE_IS_WINDOWS
-  // TODO: custom-keybinds is incompatible with Geode v5. Migrate to built-in
-  // KeybindSettingV3. auto& g = Global::get(); for (size_t i = 0; i < 6; i++) {
-  //   auto keys = keybinds::BindManager::get()->getBindsFor(buttonIDs[i]);
-  //   std::vector<int> keysInts = {};
-  //
-  //   for (size_t j = 0; j < keys.size(); j++) {
-  //     keysInts.push_back(keys[j]->getHash());
-  //     g.allKeybinds.insert(keys[j]->getHash());
-  //   }
-  //
-  //   g.keybinds[i].clear();
-  //   for (int k = 0; k < keysInts.size(); k++)
-  //     g.keybinds[i].push_back(keysInts[k]);
-  // }
-#endif
-}
+void Global::updateKeybinds() {}
 
 void Global::updateSeed(bool isRestart) {
 
@@ -458,7 +436,7 @@ $execute {
     g.mod->setSavedValue("render_hide_labels", true);
 
 #ifdef GEODE_IS_ANDROID
-    // Mobile defaults: prefer level-song mixing and avoid colorspace args.
+
     g.mod->setSavedValue("render_video_args", std::string(""));
     g.mod->setSavedValue("render_record_audio", false);
     g.mod->setSavedValue("render_only_song", true);
@@ -525,12 +503,10 @@ $execute {
            .unwrapOr(0.f) *
        60);
 
-  // NakoMod: Swift Clicks
   g.swiftClickEnabled = g.mod->getSavedValue<bool>("swift_click_enabled");
   g.swiftClickCount = g.mod->getSavedValue<int64_t>("swift_click_count", 2);
   g.swiftClickKey = g.mod->getSavedValue<int64_t>("swift_click_key", 72);
 
-  // NakoMod: Auto Swift Click
   g.autoSwiftClickEnabled =
       g.mod->getSavedValue<bool>("auto_swift_click_enabled");
   g.autoSwiftClickCount =

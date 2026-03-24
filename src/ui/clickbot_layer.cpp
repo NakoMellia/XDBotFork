@@ -22,14 +22,12 @@ void ClickbotLayer::updateLabels() {
 bool ClickbotLayer::setup() {
 	setTitle("ClickBot");
 	m_title->setPositionY(m_title->getPositionY() + 5);
-	
+
 	cocos2d::CCPoint offset = (CCDirector::sharedDirector()->getWinSize() - m_mainLayer->getContentSize()) / 2;
     m_mainLayer->setPosition(m_mainLayer->getPosition() - offset);
     m_closeBtn->setPosition(m_closeBtn->getPosition() + offset);
     m_bgSprite->setPosition(m_bgSprite->getPosition() + offset);
     m_title->setPosition(m_title->getPosition() + offset);
-
-	// Utils::setBackgroundColor(m_bgSprite);
 
 	CCMenu* menu = CCMenu::create();
 	m_mainLayer->addChild(menu);
@@ -304,8 +302,6 @@ bool ClickSettingsLayer::setup() {
     m_mainLayer->setPosition(m_mainLayer->getPosition() - offset);
     m_closeBtn->setPosition(m_closeBtn->getPosition() + offset);
     m_bgSprite->setPosition(m_bgSprite->getPosition() + offset);
-	
-	// Utils::setBackgroundColor(m_bgSprite);
 
 	CCMenu* menu = CCMenu::create();
 	m_mainLayer->addChild(menu);
@@ -429,7 +425,7 @@ void ClickSettingsLayer::onRestore(CCObject*) {
 	disableToggle->toggle(false);
 
 	settings.disabled = false;
-	
+
 	std::filesystem::path path = Mod::get()->getResourcesDir() / fmt::format("default_{}.mp3", button);
 
 	filenameLabel->setString(path.filename().string().c_str());

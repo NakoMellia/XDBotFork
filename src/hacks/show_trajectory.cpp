@@ -78,8 +78,6 @@ void syncGhostVisuals(PlayerObject *ghost, PlayerObject *realPlayer,
   if (!ghost || !realPlayer)
     return;
 
-  // Reset toggled modes first so the ghost doesn't get stuck in a previous
-  // game mode when the current frame is cube / ship / mini / normal.
   ghost->toggleBirdMode(false, true);
   ghost->toggleRollMode(false, true);
   ghost->toggleDartMode(false, true);
@@ -106,8 +104,6 @@ void syncGhostVisuals(PlayerObject *ghost, PlayerObject *realPlayer,
   ghost->m_hasGlow = data.m_hasGlow;
   ghost->m_playerStreak = data.m_playerStreak;
 
-  // Copy live transform data from the real player so mini / gravity /
-  // sideways presentation matches the current portal state.
   ghost->setScaleX(realPlayer->getScaleX());
   ghost->setScaleY(realPlayer->getScaleY());
   ghost->setScale(realPlayer->getScale());
@@ -121,13 +117,11 @@ void syncGhostVisuals(PlayerObject *ghost, PlayerObject *realPlayer,
   ghost->updatePlayerSpiderFrame(data.m_iconRequestID);
   ghost->updatePlayerSwingFrame(data.m_iconRequestID);
 
-  // Force-refresh animation state for robot / spider / swing / ship instead of
-  // leaving the ghost on a static frame.
   ghost->update(0.f);
   ghost->updateRotation(0.f);
   ghost->updatePlayerScale();
 }
-} // namespace
+}
 
 $execute {
 
@@ -390,10 +384,7 @@ void ShowTrajectory::handlePortal(PlayerObject *player, int id) {
     player->togglePlayerScale(false, true);
     player->updatePlayerScale();
     break;
-    // case 11:
-    // player->flipGravity(true, true); break;
-    // case 10:
-    // player->flipGravity(false, true); break;
+
   case 200:
     player->m_playerSpeed = 0.7f;
     break;
@@ -601,10 +592,6 @@ class $modify(GJBaseGameLayer) {
     if (!t.creatingTrajectory)
       GJBaseGameLayer::activateSongEditTrigger(p0);
   }
-  // void activateSongTrigger(SongTriggerGameObject * p0) {
-  //     if (!t.creatingTrajectory)
-  //         GJBaseGameLayer::activateSongTrigger(p0);
-  // }
 
   void gameEventTriggered(GJGameEvent p0, int p1, int p2) {
     if (!t.creatingTrajectory)

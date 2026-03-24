@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Geode/Geode.hpp>
-// #include <Geode/loader/SettingEvent.hpp>
 
 #include <cmath>
 #include <mutex>
@@ -138,15 +137,13 @@ public:
   int holdFor2 = 0;
   int releaseFor2 = 0;
 
-  // NakoMod: Swift Clicks
   bool swiftClickEnabled = false;
   int swiftClickCount = 2;
-  int swiftClickKey = 72; // 'H'
+  int swiftClickKey = 72;
 
-  // NakoMod: Auto Swift Click (SwiftClicks-style)
   bool autoSwiftClickEnabled = false;
   int autoSwiftClickCount = 2;
-  bool autoSwiftClickProcessing = false; // recursion guard
+  bool autoSwiftClickProcessing = false;
 
   bool autosaveIntervalEnabled = false;
   int autosaveInterval = 600000;
