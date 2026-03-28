@@ -95,7 +95,7 @@ private:
   std::span<std::uint8_t const> m_data;
 };
 
-}
+} // namespace
 
 void Macro::recordAction(int frame, int button, bool player2, bool hold) {
   PlayLayer *pl = PlayLayer::get();
@@ -190,7 +190,7 @@ void Macro::tryAutosave(GJGameLevel *level, CheckpointObject *cp) {
       autoSavesPath /
       fmt::format("autosave_{}_{}", levelname, g.currentSession);
   std::error_code ec;
-  std::filesystem::remove(path.string() + ".gdr", ec);
+  std::filesystem::remove(path.string() + ".gdr", ec); // Remove previous save
   if (ec)
     log::warn("Failed to remove previous autosave");
 
@@ -283,6 +283,7 @@ int Macro::save(std::string author, std::string desc, std::string path,
   g.macro.description = desc;
   g.macro.duration = g.macro.inputs.back().frame / g.macro.framerate;
 
+  // NakoMod: Save last recorded frame for Continue Botting
   g.macro.lastRecordedFrame = g.macro.inputs.back().frame;
 
 #ifdef GEODE_IS_WINDOWS
@@ -582,6 +583,21 @@ bool Macro::shouldStep() {
     return true;
   if (Global::getCurrentFrame() == 0)
     return true;
+
+  // if (g.ignoreFrame != -1) return true;
+  // if (g.ignoreJumpButton != -1) return true;
+
+  // if (g.delayedFrameReleaseMain[0] != -1) return true;
+  // if (g.delayedFrameReleaseMain[1] != -1) return true;
+
+  // if (g.delayedFrameInput[0] != -1) return true;
+  // if (g.delayedFrameInput[1] != -1) return true;
+
+  // for (int x = 0; x < 2; x++) {
+  //     for (int y = 0; y < 2; y++) {
+  //         if (g.delayedFrameRelease[x][y] != -1) return true;
+  //     }
+  // }
 
   return false;
 }

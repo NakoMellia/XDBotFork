@@ -20,7 +20,7 @@ private:
 		Global::get().autosaveInterval = static_cast<int>(mins * 60);
 		Mod::get()->setSavedValue("autosave_interval", str);
 	}
-
+	
     bool setup() {
         setTitle("AutoSave");
 		m_title->setScale(0.575f);
@@ -43,7 +43,7 @@ private:
 		lbl->setAnchorPoint({0, 0.5f});
 		lbl->setScale(0.32f);
 		m_mainLayer->addChild(lbl);
-
+		
 		intervalLbl = CCLabelBMFont::create("Interval", "bigFont.fnt");
 		intervalLbl->setPosition({169, 150});
 		intervalLbl->setScale(0.325f);
@@ -128,7 +128,7 @@ private:
 		intervalLbl2->setOpacity(g.autosaveIntervalEnabled ? 255 : 100);
 		intervalInput->getBGSprite()->setOpacity(g.autosaveIntervalEnabled ? 90 : 30);
 		intervalInput->setEnabled(g.autosaveIntervalEnabled);
-
+		// intervalInput->getInputNode()->m_placeholderLabel->setOpacity(g.autosaveIntervalEnabled ? 255 : 100);
 		if (!g.autosaveIntervalEnabled) {
 			intervalInput->getInputNode()->detachWithIME();
 			intervalInput->getInputNode()->onClickTrackNode(false);
@@ -138,7 +138,7 @@ private:
 	}
 
 public:
-
+	
 	void open(CCObject*) {
 		create()->show();
 	}

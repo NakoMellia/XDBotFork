@@ -297,13 +297,15 @@ class $modify(BGLHook, GJBaseGameLayer) {
 
     if (g.delayedFrameInput[0] == frame) {
       g.delayedFrameInput[0] = -1;
-
+      // if ((g.heldButtons[0] && twoPlayers) || (!twoPlayers &&
+      // (g.heldButtons[0] || g.heldButtons[3])))
       GJBaseGameLayer::handleButton(true, 1, true);
     }
 
     if (g.delayedFrameInput[1] == frame) {
       g.delayedFrameInput[1] = -1;
-
+      // if ((g.heldButtons[3] && twoPlayers) || (!twoPlayers &&
+      // (g.heldButtons[0] || g.heldButtons[3])))
       GJBaseGameLayer::handleButton(true, 1, false);
     }
 
@@ -373,10 +375,13 @@ class $modify(BGLHook, GJBaseGameLayer) {
     g.respawnFrame = -1;
     m_fields->macroInput = false;
 
+    // NakoMod: Continue Botting — switch from Playing to Recording at the
+    // target frame
     if (g.continueFrame != -1 && (int)frame >= g.continueFrame) {
       int targetFrame = g.continueFrame;
       g.continueFrame = -1;
 
+      // Trim inputs: keep only inputs up to the target frame
       auto &inputs = g.macro.inputs;
       inputs.erase(std::remove_if(inputs.begin(), inputs.end(),
                                   [targetFrame](const input &inp) {
@@ -384,6 +389,7 @@ class $modify(BGLHook, GJBaseGameLayer) {
                                   }),
                    inputs.end());
 
+      // Trim frameFixes similarly
       auto &fixes = g.macro.frameFixes;
       fixes.erase(std::remove_if(fixes.begin(), fixes.end(),
                                  [targetFrame](const gdr::FrameFix &fix) {
@@ -391,6 +397,7 @@ class $modify(BGLHook, GJBaseGameLayer) {
                                  }),
                   fixes.end());
 
+      // Switch to recording
       g.state = state::recording;
       g.continueBotting = false;
       g.continueBottingSpeedhack = false;
@@ -399,12 +406,13 @@ class $modify(BGLHook, GJBaseGameLayer) {
 
       Loader::get()->queueInMainThread([] {
         if (PlayLayer *pl = PlayLayer::get()) {
-
+          // Enable practice mode and place checkpoint for respawning
           if (!pl->m_isPracticeMode) {
             pl->togglePracticeMode(true);
           }
           pl->markCheckpoint();
 
+          // Pause the game
           if (!pl->m_isPaused)
             pl->pauseGame(false);
         }
@@ -470,6 +478,7 @@ class $modify(BGLHook, GJBaseGameLayer) {
     bool isPathFinding = PathFinder::isRunning();
     bool isNone = (g.state == state::none);
 
+    // Initial check for ignore input during playback
     if ((isPlaying || isPathFinding) &&
         g.mod->getSavedValue<bool>("macro_ignore_inputs") &&
         !m_fields->macroInput)
@@ -478,9 +487,11 @@ class $modify(BGLHook, GJBaseGameLayer) {
     if (isPathFinding && !m_fields->macroInput)
       return;
 
+    // Recording-specific ignore logic
     if (isRecording && g.ignoreFrame != -1 && hold)
       return;
 
+    // Recording-specific delay logic
     if (isRecording) {
       bool isDelayedInput =
           g.delayedFrameInput[(m_levelSettings->m_twoPlayerMode
@@ -501,11 +512,15 @@ class $modify(BGLHook, GJBaseGameLayer) {
       }
     }
 
+    // Capture state before original call for recording
     if (isRecording && g.inputFixes)
       g.macro.recordFrameFix(frame, m_player1, m_player2);
 
+    // Original call
     GJBaseGameLayer::handleButton(hold, button, player2);
 
+    // NakoMod: Auto Swift Click (SwiftClicks-style)
+    // Works in recording AND manual play (none/playing)
     if (hold && g.autoSwiftClickEnabled && !g.autoSwiftClickProcessing) {
       g.autoSwiftClickProcessing = true;
       int clicks = g.autoSwiftClickCount;
@@ -515,6 +530,7 @@ class $modify(BGLHook, GJBaseGameLayer) {
         GJBaseGameLayer::handleButton(false, button, player2);
         GJBaseGameLayer::handleButton(true, button, player2);
 
+        // Record the extra clicks if recording
         if (isRecording && !g.ignoreRecordAction && !g.creatingTrajectory &&
             !m_player1->m_isDead) {
           g.macro.recordAction(frame, button, player2, false);
@@ -524,6 +540,7 @@ class $modify(BGLHook, GJBaseGameLayer) {
       g.autoSwiftClickProcessing = false;
     }
 
+    // Regular Recording
     if (isRecording && !g.ignoreRecordAction && !g.creatingTrajectory &&
         !m_player1->m_isDead) {
       if (!m_levelSettings->m_twoPlayerMode)

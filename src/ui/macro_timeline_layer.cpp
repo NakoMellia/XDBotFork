@@ -31,8 +31,11 @@ float frameToRatio(int frame, int maxFrame) {
   return std::clamp(static_cast<float>(frame) / static_cast<float>(maxFrame),
                     0.f, 1.f);
 }
-}
+} // namespace
 
+// ══════════════════════════════════════════════════════════════════════
+//  open()
+// ══════════════════════════════════════════════════════════════════════
 void MacroTimelineLayer::open() {
   if (!PlayLayer::get()) {
     FLAlertLayer::create("Timeline", "Open a level first.", "Ok")->show();
@@ -44,10 +47,17 @@ void MacroTimelineLayer::open() {
   layer->show();
 }
 
+// ══════════════════════════════════════════════════════════════════════
+//  setup()  —  REDESIGNED LAYOUT
+//  All coordinates use m_size (580x320) — the popup's local space.
+//  (0,0) = bottom-left of popup, (m_size.width, m_size.height) = top-right.
+// ══════════════════════════════════════════════════════════════════════
 bool MacroTimelineLayer::setup() {
   auto &g = Global::get();
   auto winSize = CCDirector::sharedDirector()->getWinSize();
 
+  // BYPASS Geode::Popup layout
+  // We force the main layer to be fullscreen and anchored at bottom-left (0,0)
   m_mainLayer->ignoreAnchorPointForPosition(true);
   m_mainLayer->setAnchorPoint({0.f, 0.f});
   m_mainLayer->setPosition({0.f, 0.f});
@@ -75,15 +85,18 @@ bool MacroTimelineLayer::setup() {
   Interface::updateLabels();
   Interface::updateButtons();
 
+  // Hide default popup background, keep m_mainLayer as-is (centered by Popup)
   m_bgSprite->setOpacity(0);
   if (m_closeBtn)
     m_closeBtn->setVisible(false);
 
+  // Dim overlay — covers the full popup area
   auto *screenDim = CCLayerColor::create({0, 0, 0, 92});
   screenDim->setContentSize({W, H});
   screenDim->setPosition({0.f, 0.f});
   m_mainLayer->addChild(screenDim, -5);
 
+  // ── BOTTOM DOCK ──────────────────────────────────────────────────
   float dockLeft = kEdgeMargin;
   float dockBottom = kEdgeMargin;
   float dockWidth = W - kEdgeMargin * 2.f;
@@ -97,6 +110,7 @@ bool MacroTimelineLayer::setup() {
   bottomDock->setPosition({W / 2.f, dockCenterY});
   m_mainLayer->addChild(bottomDock, 1);
 
+  // ── INSPECTOR PANEL (right side) ─────────────────────────────────
   float inspectorWidth = kSidePanelWidth;
   float inspectorCenterX = dockLeft + dockWidth - inspectorWidth / 2.f - 12.f;
   float inspectorCenterY = dockCenterY;
@@ -118,6 +132,7 @@ bool MacroTimelineLayer::setup() {
   inspectorPanel->setPosition({inspectorCenterX, inspectorCenterY});
   m_mainLayer->addChild(inspectorPanel, 3);
 
+  // ── TIMELINE AREA (left side) ────────────────────────────────────
   float timelineLeft = dockLeft + 14.f;
   float timelineRight = inspectorCenterX - inspectorWidth / 2.f - 18.f;
   float timelineWidth = timelineRight - timelineLeft;
@@ -176,6 +191,7 @@ bool MacroTimelineLayer::setup() {
   p2Label->setColor(kGold);
   m_mainLayer->addChild(p2Label, 6);
 
+  // ── INFO LABELS ──────────────────────────────────────────────────
   frameLabel = CCLabelBMFont::create("Frame: 0", "bigFont.fnt");
   frameLabel->setAnchorPoint({0.f, 0.5f});
   frameLabel->setScale(0.34f);
@@ -198,6 +214,7 @@ bool MacroTimelineLayer::setup() {
       {timelineRight - 6.f, dockBottom + kBottomDockHeight - 18.f});
   m_mainLayer->addChild(statusLabel, 6);
 
+  // ── SLIDER (invisible bar, drives playhead) ──────────────────────
   timelineSlider =
       Slider::create(this, menu_selector(MacroTimelineLayer::onSlider), 1.f);
   timelineSlider->setPosition({laneStartX, trackCenterY - 11.f});
@@ -213,14 +230,17 @@ bool MacroTimelineLayer::setup() {
   }
   m_mainLayer->addChild(timelineSlider, 8);
 
+  // ── MARKER DRAW NODE ─────────────────────────────────────────────
   markerNode = cocos2d::CCDrawNode::create();
   markerNode->setPosition({0.f, 0.f});
   m_mainLayer->addChild(markerNode, 7);
 
+  // ── EDITOR MENU ──────────────────────────────────────────────────
   editorMenu = CCMenu::create();
   editorMenu->setPosition({0.f, 0.f});
   m_mainLayer->addChild(editorMenu, 12);
 
+  // ── Helper lambdas ───────────────────────────────────────────────
   auto addInspectorLabel = [&](char const *text, float x, float y,
                                float scale = 0.3f,
                                cocos2d::ccColor3B color = ccc3(230, 230, 230)) {
@@ -258,6 +278,7 @@ bool MacroTimelineLayer::setup() {
     return button;
   };
 
+  // ── INSPECTOR CONTENTS ───────────────────────────────────────────
   float panelLeftX = inspectorCenterX - inspectorWidth / 2.f + 12.f;
   float panelTopY = inspectorCenterY + kSidePanelHeight / 2.f - 16.f;
   addInspectorLabel("Selected", panelLeftX, panelTopY, 0.34f, kGold);
@@ -314,6 +335,7 @@ bool MacroTimelineLayer::setup() {
   addButton("Delete", {inspectorCenterX + 36.f, controlsY - 2.f},
             menu_selector(MacroTimelineLayer::onDeleteInput), 0, 0.24f);
 
+  // ── CLOSE BUTTON ─────────────────────────────────────────────────
   auto *closeSpr = CCSprite::createWithSpriteFrameName("GJ_closeBtn_001.png");
   closeSpr->setScale(0.6f);
   auto *closeBtn = CCMenuItemSpriteExtra::create(
@@ -322,12 +344,16 @@ bool MacroTimelineLayer::setup() {
                          inspectorCenterY + kSidePanelHeight / 2.f - 6.f});
   editorMenu->addChild(closeBtn);
 
+  // ── FINISH ───────────────────────────────────────────────────────
   setCurrentFrame(inputs.empty() ? 0 : static_cast<int>(inputs.front().frame));
   refreshStatus();
   rebuildMarkers();
   return true;
 }
 
+// ══════════════════════════════════════════════════════════════════════
+//  onClose()
+// ══════════════════════════════════════════════════════════════════════
 void MacroTimelineLayer::onClose(CCObject *) {
   if (!saved) {
     geode::createQuickPopup(
@@ -358,6 +384,9 @@ void MacroTimelineLayer::onClose(CCObject *) {
   this->removeFromParentAndCleanup(true);
 }
 
+// ══════════════════════════════════════════════════════════════════════
+//  sortInputs()
+// ══════════════════════════════════════════════════════════════════════
 void MacroTimelineLayer::sortInputs() {
   std::sort(inputs.begin(), inputs.end(),
             [](input const &left, input const &right) {
@@ -373,23 +402,34 @@ void MacroTimelineLayer::sortInputs() {
       std::max(1, inputs.empty() ? 1 : static_cast<int>(inputs.back().frame));
 }
 
+// ══════════════════════════════════════════════════════════════════════
+//  markUnsaved()
+// ══════════════════════════════════════════════════════════════════════
 void MacroTimelineLayer::markUnsaved() {
   saved = false;
   refreshStatus();
   rebuildMarkers();
 }
 
+// ══════════════════════════════════════════════════════════════════════
+//  refreshStatus()
+// ══════════════════════════════════════════════════════════════════════
 void MacroTimelineLayer::refreshStatus() {
   statusLabel->setString(
       fmt::format("Inputs: {}{}", inputs.size(), saved ? "" : "  *unsaved")
           .c_str());
 }
 
+// ══════════════════════════════════════════════════════════════════════
+//  rebuildMarkers()  —  uses m_size coordinates (popup local space)
+// ══════════════════════════════════════════════════════════════════════
 void MacroTimelineLayer::rebuildMarkers() {
   if (!markerNode)
     return;
   markerNode->clear();
 
+  // All coordinates are in popup local space: (0,0) to (m_size.width,
+  // m_size.height)
   float W = m_size.width;
   float dockLeft = kEdgeMargin;
   float dockBottom = kEdgeMargin;
@@ -405,11 +445,13 @@ void MacroTimelineLayer::rebuildMarkers() {
   float laneTopY = trackCenterY + kLaneGap / 2.f;
   float laneBottomY = trackCenterY - kLaneGap / 2.f;
 
+  // Remove old tick labels
   for (int tag = 9000; tag <= 9050; ++tag) {
     if (auto *node = m_mainLayer->getChildByTag(tag))
       node->removeFromParentAndCleanup(true);
   }
 
+  // Frame ruler ticks
   int tickSpacing = std::max(1, maxFrame / 10);
   int tagIndex = 0;
   for (int frame = 0; frame <= maxFrame; frame += tickSpacing) {
@@ -424,10 +466,12 @@ void MacroTimelineLayer::rebuildMarkers() {
     m_mainLayer->addChild(label, 6, 9000 + tagIndex++);
   }
 
+  // Ruler baseline
   markerNode->drawSegment({trackStartX, trackCenterY + 46.f},
                           {trackStartX + trackWidth, trackCenterY + 46.f}, 0.8f,
                           ccc4f(1.f, 1.f, 1.f, 0.12f));
 
+  // Input markers
   for (auto const &inp : inputs) {
     float x = trackStartX +
               trackWidth * frameToRatio(static_cast<int>(inp.frame), maxFrame);
@@ -449,6 +493,7 @@ void MacroTimelineLayer::rebuildMarkers() {
     }
   }
 
+  // Highlight selected input
   if (selectedIndex >= 0 && selectedIndex < static_cast<int>(inputs.size())) {
     float x =
         trackStartX +
@@ -458,6 +503,7 @@ void MacroTimelineLayer::rebuildMarkers() {
                             ccc4f(1.f, 0.85f, 0.18f, 0.94f));
   }
 
+  // Playhead
   float playheadX =
       trackStartX + trackWidth * frameToRatio(currentFrame, maxFrame);
   markerNode->drawSegment({playheadX, laneBottomY - 26.f},
@@ -469,6 +515,9 @@ void MacroTimelineLayer::rebuildMarkers() {
                       ccc4f(1.f, 0.82f, 0.08f, 1.f));
 }
 
+// ══════════════════════════════════════════════════════════════════════
+//  selectNearestInput()
+// ══════════════════════════════════════════════════════════════════════
 void MacroTimelineLayer::selectNearestInput() {
   if (inputs.empty()) {
     selectedIndex = -1;
@@ -491,6 +540,9 @@ void MacroTimelineLayer::selectNearestInput() {
   refreshSelectedInfo();
 }
 
+// ══════════════════════════════════════════════════════════════════════
+//  refreshSelectedInfo()
+// ══════════════════════════════════════════════════════════════════════
 void MacroTimelineLayer::refreshSelectedInfo() {
   if (selectedIndex < 0 || selectedIndex >= static_cast<int>(inputs.size())) {
     selectedLabel->setString("No input selected");
@@ -520,6 +572,9 @@ void MacroTimelineLayer::refreshSelectedInfo() {
     playerValueLabel->setString(inp.player2 ? "Two" : "One");
 }
 
+// ══════════════════════════════════════════════════════════════════════
+//  setCurrentFrame()
+// ══════════════════════════════════════════════════════════════════════
 void MacroTimelineLayer::setCurrentFrame(int frame, bool updateSlider) {
   currentFrame = std::clamp(frame, 0, maxFrame);
   frameLabel->setString(fmt::format("Frame: {}", currentFrame).c_str());
@@ -527,6 +582,7 @@ void MacroTimelineLayer::setCurrentFrame(int frame, bool updateSlider) {
     timelineSlider->setValue(frameToRatio(currentFrame, maxFrame));
   selectNearestInput();
 
+  // Remove old frame-ruler labels & redraw everything
   for (int tag = 9000; tag <= 9050; ++tag) {
     if (auto *node = m_mainLayer->getChildByTag(tag))
       node->removeFromParentAndCleanup(true);
@@ -535,11 +591,17 @@ void MacroTimelineLayer::setCurrentFrame(int frame, bool updateSlider) {
   rebuildMarkers();
 }
 
+// ══════════════════════════════════════════════════════════════════════
+//  onSlider()
+// ══════════════════════════════════════════════════════════════════════
 void MacroTimelineLayer::onSlider(CCObject *) {
   float value = timelineSlider->getValue();
   setCurrentFrame(static_cast<int>(std::round(value * maxFrame)), false);
 }
 
+// ══════════════════════════════════════════════════════════════════════
+//  navigation / editing
+// ══════════════════════════════════════════════════════════════════════
 void MacroTimelineLayer::onPrevInput(CCObject *) {
   if (inputs.empty())
     return;

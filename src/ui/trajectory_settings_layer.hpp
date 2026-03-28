@@ -17,6 +17,8 @@ private:
   bool setup() {
     setTitle("Show Trajectory");
 
+    // Utils::setBackgroundColor(m_bgSprite);
+
     CCSprite *spriteOn =
         CCSprite::createWithSpriteFrameName("GJ_checkOn_001.png");
     CCSprite *spriteOff =

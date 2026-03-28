@@ -37,6 +37,11 @@ class $modify(CCDirector) {
     if (Global::getCurrentFrame() < 3)
       return CCDirector::drawScene();
 
+    if (g.holdingStepForward && g.stepFramesPending == 0 &&
+        g.stepFrameDrawMultiple == 0) {
+      Global::frameStep(1);
+    }
+
     if (g.stepFrameDraw || g.stepFrameDrawMultiple != 0) {
       g.stepFrameDraw = false;
 
@@ -74,12 +79,21 @@ class $modify(GJBaseGameLayer) {
 
     auto &g = Global::get();
 
+    if (g.holdingStepForward && g.stepFramesPending == 0) {
+      Global::frameStep(1);
+    }
+
     if (!g.renderer.recording && g.frameStepper) {
       if (g.stepFrameParticle != 0)
         g.stepFrameParticle--;
 
-      if (Macro::shouldStep()) {
-        g.stepFrame = false;
+      if (Macro::shouldStep() || g.stepFramesPending > 0) {
+        if (g.stepFramesPending > 0) {
+          g.stepFramesPending--;
+          g.stepFrame = false;
+        } else {
+          g.stepFrame = false;
+        }
 
         GJBaseGameLayer::update(1.f / Global::getTPS());
 

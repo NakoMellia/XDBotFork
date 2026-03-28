@@ -1,3 +1,12 @@
+# v2.6.6
+
+* Added HDR rendering (Libx265 / Hevc_nvenc).
+* Added menu background blur (requires mod).
+* Added a custom keybind for Frame Stepper.
+* Added Frame Stepper Hold functionality (with mobile on-screen button support).
+* Added a Telegram channel icon to the bot menu.
+* Fixed bugs and optimized the exact 1-frame stepper engine.
+
 # v2.6.5
 
 * Added `.gdr2` macro import support.
@@ -63,7 +72,7 @@
 * Remove FFmpeg API dependency.
 * Fixed bug where the inputs of the previous macro would stay on the new one.
 * Fixed bug where orb and pad effects wouldn't show on render if hide level complete was enabled.
-* Cleaned up internal notes for the changelog.
+* uhhh umm.... ermrmrm... huhh erhuhreurhe uhhhhh ummm. ughg...
 
 # v2.3.11
 
@@ -74,15 +83,16 @@
 # v2.3.10
 
 * Added restore button for clickbot click settings.
-* Fixed the seed handling again after a missed edge case.
+* Fixed seed again cus i forgot sometinhg.
 * Fixed android render trying to record audio even though it cant add it to the video.
 * Fixed buttons scale JUST for viper.
-* Fixed TPS bypass speedups.
+* Fixed tps bypass speedups maybe.
+* R
 
 # v2.3.9
 
-* Fixed the TPS bypass bug at 240 FPS so it behaves correctly with TPS enabled.
-* Left Android video args empty by default because the FFmpeg API can fail with them.
+* Fixed tps bypass bug when at 240 and enabled so that this lucalwise kid can play with tps enabled but at 240tps.
+* Made android video args empty by default cus dffmpeg api dies with them i think.
 
 # v2.3.8
 
@@ -112,7 +122,7 @@
 
 # v2.3.3
 
-* Fixed Android render input length being limited to 3 or 2 characters.
+* Fixed android render inputs length being limited to 3 or 2 idk.
 * Fixed macro autosaving on level end even if autosave was not enabled.
 
 # v2.3.2
@@ -154,9 +164,9 @@
 * Fixed layout mode crash in certain levels that use particles.
 * Fixed android crash on edit macro.
 * Fixed android speedhack only allowed 1 decimal digit.
-* Removed leftover debug logs.
+* Removed some debug logs that i forgot to remove.
 * Removed keybinds button warning.
-* Removed obsolete placeholder notes.
+* Removed herobrine.
 * Improved seed to be more random xD.
 * Improved Clickbot performance.
 * Improved render hide level complete setting.
@@ -170,14 +180,14 @@
 * Moved Show Trajectory extra settings to its own UI.
 * Moved Auto Stop Playing setting to more settings.
 * Moved Lock Delta setting to more settings.
-* Possibly optimized a few small things.
+* Possibly optimized a few things i forgot what it was.
 * Made settings page also save after reopening.
 * Made disable shaders trigger auto safe mode.
-* Added descriptions to auto-saved macros.
+* Made auto saved macros have description for no reason xd.
 * Slightly changed extra hack settings button looks.
 
 # v2.2.6
-
+    
 * Fixed discord link.
 
 # v2.2.5
@@ -187,7 +197,7 @@
 # v2.2.4
 
 * Fixed render fade out not re encoding with the original bitrate.
-* Fixed a render fade-out regression.
+* nose
 
 # v2.2.3
 
@@ -196,7 +206,7 @@
 # v2.2.2
 
 * Fixed layout mode returning "Load Failed!" on robtop levels.
-* Fixed a layout mode bug that had gone unnoticed before.
+* Fixed crazy layout mode bug idk how it didnt get reported before.
 * Fixed render args not allowing some characters.
 * Fixed fade out not re-encoding with the selected codec.
 * Fixed render restore defaults button not restoring defaults.
@@ -211,7 +221,7 @@
 * Made it so render audio recording stops when the player dies.
 * Fixed dash trail looking weird with show trajectory on.
 * Fixed render audio recording not stopping on 60fps.
-* Fixed render fade-out behavior.
+* Fixed render fade out not working i think.
 * Fixed being able to type anything in fade inputs.
 * Fixed render not working when fade out time was longer than the video length.
 
@@ -233,13 +243,13 @@
 * Added instant mirror portal.
 * Added no mirror portal.
 * Added custom respawn time.
-* Added lock delta.
+* Added lock delta (filler lmao).
 * Added optional button at level settings.
 * Added my ko-fi.
 
 # v2.1.3
 
-* Fixed the GUI disappearing unexpectedly.
+* Fixed GUI being shy and running a way.
 
 # v2.1.2
 
@@ -247,7 +257,7 @@
 
 # v2.1.1
 
-* Geode 4.0.0-beta.1
+* gode 4.0.0-beta.1
 
 # v2.1.0
 
@@ -255,7 +265,7 @@
 
 # v2.0.3
 
-* Fixed render audio desynchronization.
+* Fixed render record audio desync i think xD.
 
 # v2.0.2
 
@@ -268,7 +278,7 @@
 * Fixed crash if some macro info was null for whatever reason.
 * Fixed macro bot info saving bug.
 * Fixed practice rotation bug.
-* Capped render FPS at 240.
+* Actually capped render fps to 240 now lmao.
 * I think render fps were never saving so it was always 60 no matter what u set it to.
 
 # v2.0.0
@@ -348,7 +358,7 @@
 * Added Macro Editor.
 * Added macro count in load macro layer.
 * Added render video args.
-* Added render restore default settings button.
+* Added render restore default settings button. 
 * Added incompatibility warning if BetterInputs is installed.
 * Added click on steps incompatibility just in case lol.
 * Added GDH Tps Bypass incompatibility.
@@ -398,7 +408,7 @@
 * Fixed level restarting when toggling playing on after finishing the level.
 * Fixed layout mode removing deco objects that are linked to a teleport orb or portal.
 * Fixed crash when loading a macro in android.
-* Fixed some inconsistent casing.
+* Fixed some inconsistent casing xd.
 * Fixed default clickbot click sound only sounding on the left.
 * Made layout mode remove objects with "NoTouch" on.
 
@@ -520,7 +530,7 @@
  * Fixed some platformer macro bugs.
  * Slightly improved Android performace when loading frame fixes macros.
  * Possibly fixed one more crash on restart.
-
+ 
 # v1.4.8
 
  * Fixed some macro bugs on Android.
@@ -560,6 +570,7 @@
  * Re-worked FPS selector.
  * Fixed frame stepper buttons conflicting with platformer buttons on Android.
  * Fixed incompatibility with BetterPause.
+ 
 
 # v1.4.2
 
@@ -584,12 +595,12 @@
  * Added discord button.
 
 # v1.3.10
-
+ 
  * Fixed macros working different when loaded.
 
 # v1.3.9
 
- * Fixed a crash.
+ * Fixed crash i think xd
  * You can now add inputs to a macro by recording over it (again).
 
 # v1.3.8
@@ -604,13 +615,13 @@
 
 # v1.3.6
 
-* Maintenance update.
+ * Air update.
 
 # v1.3.5
 
- * Fixed macros saving with an extra trailing `WA`.
+ * Fixed macros saving with "WA" at the end lmao.
  * Fixed Delete Macro pop up title being Load Macro instead of Delete Macro.
- * Fixed macros not saving if the path contains non-english characters.
+ * Fixed macros not saving if the path contains non-english characters. 
  * Fixed crash when opening the pause menu.
 
 # v1.3.4
@@ -624,7 +635,7 @@
 
  * Added override macro mode setting.
  * Fixed labels not disappearing after disabling recording or playing.
- * The previous version was never released, but this build fixes a crash.
+ * Previous version never came out but fixed a crash xd.
 
 # v1.3.2
 

@@ -1,8 +1,13 @@
 #include "ui/game_ui.hpp"
 #include "ui/record_layer.hpp"
 
-#include <Geode/modify/CCTextInputNode.hpp>
 #include <Geode/binding/LevelEditorLayer.hpp>
+#include <Geode/modify/CCTextInputNode.hpp>
+
+#ifdef GEODE_IS_WINDOWS
+// #include <geode.custom-keybinds/include/Keybinds.hpp> // incompatible with
+// Geode v5
+#endif
 
 #include <random>
 
@@ -32,7 +37,7 @@ struct IncompatibleMod {
 const std::vector<IncompatibleMod> incompatibleMods{
     {"alphalaneous.click_after_frames", true, {{"soft-toggle", false, true}}},
     {"thesillydoggo.qolmod", true, {{"tps-bypass_enabled", true, false, true}}},
-
+    // { "zmx.cbf-lite", false, {  } }
 };
 
 bool Global::hasIncompatibleMods() {
@@ -194,7 +199,24 @@ int Global::getCurrentFrame(bool editor) {
   return frame;
 }
 
-void Global::updateKeybinds() {}
+void Global::updateKeybinds() {
+#ifdef GEODE_IS_WINDOWS
+  // TODO: custom-keybinds is incompatible with Geode v5. Migrate to built-in
+  // KeybindSettingV3. auto& g = Global::get(); for (size_t i = 0; i < 6; i++) {
+  //   auto keys = keybinds::BindManager::get()->getBindsFor(buttonIDs[i]);
+  //   std::vector<int> keysInts = {};
+  //
+  //   for (size_t j = 0; j < keys.size(); j++) {
+  //     keysInts.push_back(keys[j]->getHash());
+  //     g.allKeybinds.insert(keys[j]->getHash());
+  //   }
+  //
+  //   g.keybinds[i].clear();
+  //   for (int k = 0; k < keysInts.size(); k++)
+  //     g.keybinds[i].push_back(keysInts[k]);
+  // }
+#endif
+}
 
 void Global::updateSeed(bool isRestart) {
 
@@ -265,14 +287,55 @@ void Global::updatePitch(float value) {
   }
 }
 
-void Global::frameStep() {
+void Global::frameStep(int amount) {
   auto &g = Global::get();
   if (!PlayLayer::get() || !g.frameStepper)
     return;
 
+  g.stepFramesPending += amount;
+  g.stepFrameDrawMultiple += amount;
   g.stepFrame = true;
   g.stepFrameDraw = true;
   g.stepFrameParticle = 4;
+}
+
+void Global::frameStepBackward(int amount) {
+  auto &g = Global::get();
+  PlayLayer *pl = PlayLayer::get();
+  if (!pl || !g.frameStepper)
+    return;
+
+  int currentFrame = Global::getCurrentFrame();
+  int newFrame = std::max(0, currentFrame - amount);
+
+  if (g.state == state::recording) {
+    auto &inputs = g.macro.inputs;
+    inputs.erase(std::remove_if(inputs.begin(), inputs.end(),
+                                [newFrame](const input &inp) {
+                                  return inp.frame > newFrame;
+                                }),
+                 inputs.end());
+
+    auto &fixes = g.macro.frameFixes;
+    fixes.erase(std::remove_if(fixes.begin(), fixes.end(),
+                               [newFrame](const gdr::FrameFix &fix) {
+                                 return fix.frame > newFrame;
+                               }),
+                fixes.end());
+  }
+
+  g.continueFrame = newFrame;
+  g.continueBotting = true;
+  g.continueBottingSpeedhack = true;
+
+  if (g.state != state::playing) {
+    g.state = state::playing;
+  }
+
+  if (!pl->m_levelEndAnimationStarted) {
+    pl->m_levelSettings->m_platformerMode ? pl->resetLevelFromStart()
+                                          : pl->resetLevel();
+  }
 }
 
 void Global::toggleSpeedhack() {
@@ -352,6 +415,9 @@ PauseLayer *Global::getPauseLayer() {
 
 $execute {
   auto &g = Global::get();
+
+  if (!g.mod->hasSavedValue("render_hdr"))
+    g.mod->setSavedValue("render_hdr", false);
 
   if (!g.mod->setSavedValue("defaults_set_14", true)) {
     g.mod->setSavedValue("render_fade_in_video", std::to_string(2));
@@ -436,7 +502,7 @@ $execute {
     g.mod->setSavedValue("render_hide_labels", true);
 
 #ifdef GEODE_IS_ANDROID
-
+    // Mobile defaults: prefer level-song mixing and avoid colorspace args.
     g.mod->setSavedValue("render_video_args", std::string(""));
     g.mod->setSavedValue("render_record_audio", false);
     g.mod->setSavedValue("render_only_song", true);
@@ -503,10 +569,12 @@ $execute {
            .unwrapOr(0.f) *
        60);
 
+  // NakoMod: Swift Clicks
   g.swiftClickEnabled = g.mod->getSavedValue<bool>("swift_click_enabled");
   g.swiftClickCount = g.mod->getSavedValue<int64_t>("swift_click_count", 2);
   g.swiftClickKey = g.mod->getSavedValue<int64_t>("swift_click_key", 72);
 
+  // NakoMod: Auto Swift Click
   g.autoSwiftClickEnabled =
       g.mod->getSavedValue<bool>("auto_swift_click_enabled");
   g.autoSwiftClickCount =

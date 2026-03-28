@@ -141,6 +141,8 @@ public:
 
   void onDiscord(CCObject *);
 
+  void onTelegram(CCObject *);
+
   void updateTPS();
 
   void showKeybindsWarning();

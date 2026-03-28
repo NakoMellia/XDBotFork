@@ -64,7 +64,7 @@ bool isPrimaryCandidate(input const &action) {
 bool isSecondaryCandidate(input const &action) {
   return action.down;
 }
-}
+} // namespace
 
 void PathFinder::loadSettings() {
   auto &finder = get();

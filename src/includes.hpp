@@ -1,13 +1,16 @@
 #pragma once
 
 #include <Geode/Geode.hpp>
+// #include <Geode/loader/SettingEvent.hpp>
 
+#include <algorithm>
 #include <cmath>
 #include <mutex>
 #include <queue>
 #include <string>
 #include <thread>
 #include <vector>
+
 
 #include "macro.hpp"
 #include "renderer/renderer.hpp"
@@ -64,7 +67,9 @@ public:
 
   static void toggleSpeedhack();
 
-  static void frameStep();
+  static void frameStep(int amount = 1);
+
+  static void frameStepBackward(int amount = 1);
 
   static void toggleFrameStepper();
 
@@ -94,6 +99,9 @@ public:
   bool stepFrame = false;
   bool stepFrameDraw = false;
   int stepFrameDrawMultiple = 0;
+  int stepFramesPending = 0;
+  bool holdingStepForward = false;
+  bool holdingStepBackward = false;
   int stepFrameParticle = 0;
   int frameStepperMusicTime = 0;
 
@@ -137,13 +145,15 @@ public:
   int holdFor2 = 0;
   int releaseFor2 = 0;
 
+  // NakoMod: Swift Clicks
   bool swiftClickEnabled = false;
   int swiftClickCount = 2;
-  int swiftClickKey = 72;
+  int swiftClickKey = 72; // 'H'
 
+  // NakoMod: Auto Swift Click (SwiftClicks-style)
   bool autoSwiftClickEnabled = false;
   int autoSwiftClickCount = 2;
-  bool autoSwiftClickProcessing = false;
+  bool autoSwiftClickProcessing = false; // recursion guard
 
   bool autosaveIntervalEnabled = false;
   int autosaveInterval = 600000;

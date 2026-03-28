@@ -43,6 +43,7 @@ class $modify(FLAlertLayer) {
 
     std::string selected = "";
 
+    // Latest has priority
     for (size_t i = 0; i < layer->spriteButtons.size(); i++) {
       cocos2d::CCPoint location = touch->getLocation();
       cocos2d::CCPoint btnPos = layer->spriteButtons[i]->getPosition();
@@ -186,6 +187,8 @@ bool ButtonEditLayer::setup() {
   m_mainLayer->setPosition(m_mainLayer->getPosition() - offset);
   m_closeBtn->setPosition(m_closeBtn->getPosition() + offset);
   m_bgSprite->setPosition(m_bgSprite->getPosition() + offset);
+
+  // Utils::setBackgroundColor(m_bgSprite);
 
   m_bgSprite->setPositionY(231);
   m_closeBtn->setVisible(false);

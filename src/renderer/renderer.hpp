@@ -15,6 +15,7 @@ public:
   unsigned fbo;
   geode::prelude::CCTexture2D *texture = nullptr;
 
+  // NakoMod PBO additions
   unsigned pbo[2];
   int pboIndex = 0;
   int nextPboIndex = 1;
@@ -66,6 +67,7 @@ public:
   std::string ffmpegPath = (geode::dirs::getGameDir() / "ffmpeg.exe").string();
   std::unordered_set<int> renderedFrames;
 
+  // NakoMod Multithreading queue additions
   std::queue<std::vector<uint8_t>> frameQueue;
   std::condition_variable condVar;
   bool usingMultithreading = false;

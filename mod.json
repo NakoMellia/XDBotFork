@@ -5,7 +5,7 @@
 		"android": "2.2081",
 		"mac": "2.2081"
 	},
-	"version": "v2.6.5",
+	"version": "v2.6.6",
 	"id": "zilko.xdbot",
 	"name": "xdBot",
 	"developer": "Zilko & Camellia",
@@ -33,13 +33,28 @@
 			"type": "keybind",
 			"name": "Open Menu",
 			"description": "Opens or closes the xdBot menu.",
-			"default": ["LeftMenu", "RightMenu"]
+			"default": [
+				"LeftMenu",
+				"RightMenu"
+			]
 		},
-		"keybind_toggle_macro": {
+		"keybind_toggle_stepper": {
 			"type": "keybind",
-			"name": "Toggle Macro",
-			"description": "Turns macro playback on or off.",
-			"default": "P"
+			"name": "Toggle Frame Stepper",
+			"description": "Turns the frame stepper on or off.",
+			"default": "K"
+		},
+		"keybind_step_forward": {
+			"type": "keybind",
+			"name": "Step Forward",
+			"description": "Steps one frame forward when the frame stepper is enabled.",
+			"default": "G"
+		},
+		"keybind_hold_forward": {
+			"type": "keybind",
+			"name": "Hold Forward",
+			"description": "Continuously steps forward.",
+			"default": "H"
 		},
 		"macro_accuracy": {
 			"type": "string",
@@ -193,12 +208,41 @@
 			"description": "Flips the image in code instead of using FFmpeg's video filter. Saves filtering time.",
 			"type": "bool",
 			"default": true
+		},
+		"macro_step_shift_enabled": {
+			"name": "Custom Step Size",
+			"description": "Enables holding Shift to step a custom amount of frames.",
+			"type": "bool",
+			"default": false
+		},
+		"macro_step_shift_size": {
+			"name": "Step Size Amount",
+			"description": "Amount of frames to step when holding shift.",
+			"type": "int",
+			"default": 10,
+			"min": 1,
+			"max": 100
+		},
+		"macro_hold_step_enabled": {
+			"name": "Frame St. Hold",
+			"description": "Enables custom hold step sizes.",
+			"type": "bool",
+			"default": false
+		},
+		"macro_hold_step_size": {
+			"name": "Hold Step Amount",
+			"description": "How many frames to step forward per tick while holding the frame stepper key.",
+			"type": "int",
+			"default": 1,
+			"min": 1,
+			"max": 100
 		}
 	},
 	"resources": {
 		"sprites": [
 			"resources/GJ_commentSide2_001_White.png",
-			"resources/GJ_commentTop2_001_White.png"
+			"resources/GJ_commentTop2_001_White.png",
+			"resources/telegram.png"
 		],
 		"files": [
 			"resources/default_hold_click.mp3",

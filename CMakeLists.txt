@@ -6,6 +6,9 @@ set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
 project(xdBot2 VERSION 1.0.0)
 
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/mod.json" MOD_JSON)
+string(JSON MOD_ID GET "${MOD_JSON}" id)
+
 add_library(${PROJECT_NAME} SHARED
     src/main.cpp
     src/global.cpp
@@ -50,6 +53,18 @@ endif()
 add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 
 setup_geode_mod(${PROJECT_NAME})
+
+if (WIN32)
+    set(DESKTOP_GEODE_MODS_DIR "C:/Users/drean/OneDrive/Desktop/GeometryDash/geode/mods")
+    add_custom_target(${PROJECT_NAME}_DEPLOY_DESKTOP ALL
+        DEPENDS ${PROJECT_NAME}_PACKAGE
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${DESKTOP_GEODE_MODS_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_BINARY_DIR}/${MOD_ID}.geode"
+            "${DESKTOP_GEODE_MODS_DIR}/${MOD_ID}.geode"
+        VERBATIM
+    )
+endif()
 
 if (MSVC)
     # Disable Link-Time Code Generation (WholeProgramOptimization) which causes CL.exe crash

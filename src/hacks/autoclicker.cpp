@@ -5,7 +5,7 @@
 class $modify(GJBaseGameLayer) {
 
     struct Fields {
-        int framesHolding[2] = {0, 0};
+        int framesHolding[2] = {0, 0}; 
         int framesReleasing[2] = {0, 0};
         bool autoclick[2] = {false, false};
         bool holding[2] = {false, false};
@@ -23,7 +23,7 @@ class $modify(GJBaseGameLayer) {
         const int holdFor[2] = {g.holdFor, g.holdFor2};
         const int releaseFor[2] = {g.releaseFor, g.releaseFor2};
 
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < 2; i++) { // check 2 player mode
             bool isPlayer1 = (i == 0);
             if ((!g.autoclickerP1 && isPlayer1) || (!g.autoclickerP2 && !isPlayer1)) continue;
 

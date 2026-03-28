@@ -282,6 +282,9 @@ bool LoadMacroLayer::setup() {
   menu->setZOrder(110);
   m_mainLayer->addChild(menu);
 
+  // Utils::setBackgroundColor(m_bgSprite);
+
+  // menuLayer and mergeLayer are set in create()
   isMerge = mergeLayer != nullptr;
 
   setTitle(isMerge ? "Merge Macro" : "Load Macro");

@@ -1,4 +1,5 @@
 #include "record_layer.hpp"
+#include "../BlurAPI.hpp"
 #include "../hacks/coin_finder.hpp"
 #include "../hacks/show_trajectory.hpp"
 #include "../pathfinder.hpp"
@@ -12,6 +13,7 @@
 #include "noclip_settings_layer.hpp"
 #include "pathfinder_settings_layer.hpp"
 #include "render_presets_layer.hpp"
+#include "step_shift_settings_layer.hpp"
 #include "swift_click_settings_layer.hpp"
 #include "trajectory_settings_layer.hpp"
 
@@ -61,7 +63,7 @@ const std::vector<std::vector<RecordSetting>> settings{
         {"Ignore inputs:", "macro_ignore_inputs", InputType::None},
         {"Show Frame Label:", "macro_show_frame_label", InputType::None},
         {"Enable Frame Stepper:", "macro_frame_stepper", InputType::None}
-
+        // { "Auto Stop Playing:", "macro_auto_stop_playing", InputType::None }
     },
     {{"Respawn Time:", "respawn_time_enabled", InputType::Respawn},
      {"Input Mirror:", "p2_input_mirror", InputType::Settings, 0.325f,
@@ -71,9 +73,9 @@ const std::vector<std::vector<RecordSetting>> settings{
      {"No Mirror Portal:", "no_mirror_portal", InputType::None},
      {"Enable Auto Saving:", "macro_auto_save", InputType::Autosave}},
     {{"Ghost Playback:", "macro_show_ghost", InputType::None},
-     {"Safe Mode:", "macro_auto_safe_mode", InputType::None},
      {"Path Finder:", "macro_pathfinder_enabled", InputType::Settings, 0.325f,
-      menu_selector(PathFinderSettingsLayer::open)}}};
+      menu_selector(PathFinderSettingsLayer::open)},
+     {"Enable Blur:", "menu_enable_blur", InputType::None}}};
 
 class $modify(PauseLayer) {
   void customSetup() {
@@ -284,10 +286,12 @@ void RecordLayer::toggleContinue(CCObject *) {
   if (Global::hasIncompatibleMods())
     return;
 
+  // Set the frame at which to switch from playing to recording
   g.continueFrame = g.macro.lastRecordedFrame;
   g.continueBotting = true;
   g.continueBottingSpeedhack = true;
 
+  // Start playback
   if (g.state != state::playing) {
     playing->toggle(true);
     togglePlaying(nullptr);
@@ -355,7 +359,7 @@ void RecordLayer::toggleRender(CCObject *btn) {
 
 void RecordLayer::onEditMacro(CCObject *) { MacroEditLayer::open(); }
 
-void RecordLayer::toggleFPS(bool on) {
+void RecordLayer::toggleFPS(bool on) { // forgotten
   return;
   float scaleSpr = -0.8, scaleBtn = -1;
   int opacityBtn = 57, opacityLbl = 80;
@@ -394,7 +398,8 @@ void RecordLayer::textChanged(CCTextInputNode *node) {
   if (node == seedInput) {
 
     if (auto num = numFromString<unsigned long long>(seedInput->getString())) {
-      mod->setSavedValue("macro_seed", std::to_string(num.unwrap()));
+      mod->setSavedValue("macro_seed",
+                         std::string(std::to_string(num.unwrap())));
       return;
     } else {
       return seedInput->setString(
@@ -495,6 +500,8 @@ void RecordLayer::toggleSetting(CCObject *obj) {
 
   g.mod->setSavedValue(id, value);
 
+  // Some of these get checked every frame so idk i didnt want to do
+  // mod->getSavedValue<bool> every time
   if (id == "macro_seed_enabled")
     g.seedEnabled = value;
   if (id == "macro_speedhack_enabled")
@@ -534,6 +541,12 @@ void RecordLayer::toggleSetting(CCObject *obj) {
     ShowTrajectory::ghostOff();
   if (id == "macro_auto_safe_mode" && !value)
     g.safeMode = false;
+  if (id == "menu_enable_blur") {
+    if (value)
+      BlurAPI::addBlur(static_cast<CCNode *>(this));
+    else
+      BlurAPI::removeBlur(static_cast<CCNode *>(this));
+  }
   if (id == "macro_pathfinder_enabled") {
     if (value)
       PathFinder::start();
@@ -595,6 +608,14 @@ void RecordLayer::toggleSetting(CCObject *obj) {
         return;
       layer->onlySongToggle->toggle(false);
       g.mod->setSavedValue("render_only_song", false);
+    }
+  }
+
+  if (id == "render_hdr") {
+    CCScene *scene = CCDirector::sharedDirector()->getRunningScene();
+    if (RenderSettingsLayer *layer =
+            scene->getChildByType<RenderSettingsLayer>(0)) {
+      layer->updateManualArgState();
     }
   }
 
@@ -705,6 +726,12 @@ void RecordLayer::updateDots() {
 bool RecordLayer::setup() {
   auto &g = Global::get();
   mod = g.mod;
+
+  if (mod->getSavedValue<bool>("menu_enable_blur", true)) {
+    BlurAPI::addBlur(this);
+  }
+
+  // Utils::setBackgroundColor(m_bgSprite);
 
   cocos2d::CCPoint offset = (CCDirector::sharedDirector()->getWinSize() -
                              m_mainLayer->getContentSize()) /
@@ -859,6 +886,7 @@ bool RecordLayer::setup() {
   lbl->setScale(0.325f);
   menu->addChild(lbl);
 
+  // NakoMod: Continue Botting button
   {
     auto continueSprite = ButtonSprite::create("Continue", "goldFont.fnt",
                                                "GJ_button_01.png", 0.8f);
@@ -866,7 +894,7 @@ bool RecordLayer::setup() {
     continueBtn = CCMenuItemSpriteExtra::create(
         continueSprite, this, menu_selector(RecordLayer::toggleContinue));
     continueBtn->setPosition(ccp(-116.5, 54));
-
+    // Only show if macro has a lastRecordedFrame
     continueBtn->setVisible(g.macro.lastRecordedFrame > 0 &&
                             !g.macro.inputs.empty());
     menu->addChild(continueBtn);
@@ -939,7 +967,7 @@ bool RecordLayer::setup() {
   widthInput = CCTextInputNode::create(150, 30, "Width", "chatFont.fnt");
   widthInput->m_textField->setAnchorPoint({0.5f, 0.5f});
   widthInput->ignoreAnchorPointForPosition(true);
-
+  // widthInput->m_placeholderLabel->setAnchorPoint({ 0.5f, 0.5f });
   widthInput->setPosition(ccp(-157, -31));
   widthInput->setMaxLabelScale(0.7f);
   widthInput->setMouseEnabled(true);
@@ -955,7 +983,7 @@ bool RecordLayer::setup() {
   heightInput = CCTextInputNode::create(150, 30, "Height", "chatFont.fnt");
   heightInput->m_textField->setAnchorPoint({0.5f, 0.5f});
   heightInput->ignoreAnchorPointForPosition(true);
-
+  // heightInput->m_placeholderLabel->setAnchorPoint({ 0.5f, 0.5f });
   heightInput->setPosition(ccp(-72.5, -31));
   heightInput->setMaxLabelScale(0.7f);
   heightInput->setMouseEnabled(true);
@@ -971,7 +999,7 @@ bool RecordLayer::setup() {
   bitrateInput = CCTextInputNode::create(150, 30, "br", "chatFont.fnt");
   bitrateInput->m_textField->setAnchorPoint({0.5f, 0.5f});
   bitrateInput->ignoreAnchorPointForPosition(true);
-
+  // bitrateInput->m_placeholderLabel->setAnchorPoint({ 0.5f, 0.5f });
   bitrateInput->setPosition(ccp(-185.5, -59));
   bitrateInput->setMaxLabelScale(0.7f);
   bitrateInput->setMouseEnabled(true);
@@ -1010,7 +1038,7 @@ bool RecordLayer::setup() {
   codecInput = CCTextInputNode::create(150, 30, "Codec", "chatFont.fnt");
   codecInput->m_textField->setAnchorPoint({0.5f, 0.5f});
   codecInput->ignoreAnchorPointForPosition(true);
-
+  // codecInput->m_placeholderLabel->setAnchorPoint({ 0.5f, 0.5f });
   codecInput->setPosition(ccp(-70.5, -62));
   codecInput->setMouseEnabled(true);
   codecInput->setTouchEnabled(true);
@@ -1026,7 +1054,8 @@ bool RecordLayer::setup() {
   fpsInput = CCTextInputNode::create(150, 30, "FPS", "chatFont.fnt");
   fpsInput->m_textField->setAnchorPoint({0.5f, 0.5f});
   fpsInput->ignoreAnchorPointForPosition(true);
-
+  // fpsInput->m_placeholderLabel->setAnchorPoint({ 0.5f, 0.5f });
+  // fpsInput->m_placeholderLabel->setScale(0.6);
   fpsInput->setPosition(ccp(-133, -59));
   fpsInput->setMaxLabelScale(0.7f);
   fpsInput->setMouseEnabled(true);
@@ -1147,6 +1176,16 @@ bool RecordLayer::setup() {
                            m_size / 2 + ccp(-16, 16)));
   m_buttonMenu->addChild(dickordBtn);
 
+  CCSprite *telegramSpr = CCSprite::create("telegram.png"_spr);
+  if (telegramSpr) {
+    telegramSpr->setScale(0.9f);
+    CCMenuItemSpriteExtra *telegramBtn = CCMenuItemSpriteExtra::create(
+        telegramSpr, this, menu_selector(RecordLayer::onTelegram));
+    telegramBtn->setPosition((CCDirector::sharedDirector()->getWinSize() / 2 -
+                              m_size / 2 + ccp(-16, 16 + 32)));
+    m_buttonMenu->addChild(telegramBtn);
+  }
+
   if (!Mod::get()->setSavedValue<bool>("dickord", true))
     dickordSpr->runAction(CCSequence::create(
         CCScaleTo::create(0.25f, 1.5f), CCRotateTo::create(0.25f, 90),
@@ -1186,6 +1225,10 @@ void RecordLayer::loadSetting(RecordSetting sett, float yPos) {
   CCSprite *spriteOff =
       CCSprite::createWithSpriteFrameName("GJ_checkOff_001.png");
   float toggleScale = 0.555f;
+
+  if (sett.disabled) {
+    // Code when disabled xD!
+  }
 
   CCMenuItemToggler *toggle = CCMenuItemToggler::create(
       spriteOff, spriteOn, this, menu_selector(RecordLayer::toggleSetting));
@@ -1252,7 +1295,6 @@ void RecordLayer::loadSetting(RecordSetting sett, float yPos) {
     speedhackInput->setPosition(ccp(127.5, yPos));
     speedhackInput->m_textField->setAnchorPoint({0.5f, 0.5f});
     speedhackInput->ignoreAnchorPointForPosition(true);
-
     speedhackInput->setMaxLabelScale(0.7f);
     speedhackInput->setMouseEnabled(true);
     speedhackInput->setTouchEnabled(true);
@@ -1317,7 +1359,8 @@ void RecordLayer::loadSetting(RecordSetting sett, float yPos) {
     tpsInput->setPosition(ccp(133.5, yPos));
     tpsInput->m_textField->setAnchorPoint({0.5f, 0.5f});
     tpsInput->ignoreAnchorPointForPosition(true);
-
+    // tpsInput->m_placeholderLabel->setAnchorPoint({ 0.5f, 0.5f });
+    // tpsInput->m_placeholderLabel->setScale(0.6);
     tpsInput->setMaxLabelScale(0.7f);
     tpsInput->setMouseEnabled(true);
     tpsInput->setTouchEnabled(true);
@@ -1353,7 +1396,8 @@ void RecordLayer::loadSetting(RecordSetting sett, float yPos) {
     seedInput->setPosition(ccp(109.5, yPos));
     seedInput->m_textField->setAnchorPoint({0.5f, 0.5f});
     seedInput->ignoreAnchorPointForPosition(true);
-
+    // seedInput->m_placeholderLabel->setAnchorPoint({ 0.5f, 0.5f });
+    // seedInput->m_placeholderLabel->setScale(0.6);
     seedInput->setMaxLabelScale(0.7f);
     seedInput->setMouseEnabled(true);
     seedInput->setTouchEnabled(true);
@@ -1385,7 +1429,8 @@ void RecordLayer::loadSetting(RecordSetting sett, float yPos) {
     respawnInput->setPosition(ccp(127.5, yPos));
     respawnInput->m_textField->setAnchorPoint({0.5f, 0.5f});
     respawnInput->ignoreAnchorPointForPosition(true);
-
+    // respawnInput->m_placeholderLabel->setAnchorPoint({ 0.5f, 0.5f });
+    // respawnInput->m_placeholderLabel->setScale(0.6);
     respawnInput->setMaxLabelScale(0.7f);
     respawnInput->setMouseEnabled(true);
     respawnInput->setTouchEnabled(true);
@@ -1447,6 +1492,16 @@ void RecordLayer::onDiscord(CCObject *) {
       });
 }
 
+void RecordLayer::onTelegram(CCObject *) {
+  geode::createQuickPopup(
+      "Telegram",
+      "Join the <cy>Telegram</c> channel?\n(<cl>t.me/gdmacros</c>).", "No",
+      "Yes", [](auto, bool btn2) {
+        if (btn2)
+          geode::utils::web::openLinkInBrowser("https://t.me/gdmacros");
+      });
+}
+
 void RecordLayer::checkAudioSpeedhack() {
   if (audioSpeedhackInput && audioSpeedhackToggle) {
     if (std::string_view(audioSpeedhackInput->getString()) != "") {
@@ -1487,6 +1542,7 @@ void RecordLayer::updateTPS() {
     tpsInput->setID("");
     tpsBg->setOpacity(75);
     tpsToggle->setEnabled(true);
+    // tpsInput->m_placeholderLabel->setOpacity(255);
 
     tpsInput->detachWithIME();
     tpsInput->onClickTrackNode(false);
@@ -1504,6 +1560,7 @@ void RecordLayer::updateTPS() {
     tpsInput->setID("disabled-input"_spr);
     tpsBg->setOpacity(30);
     tpsToggle->setEnabled(false);
+    // tpsInput->m_placeholderLabel->setOpacity(120);
 
     tpsInput->detachWithIME();
     tpsInput->onClickTrackNode(false);

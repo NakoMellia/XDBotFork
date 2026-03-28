@@ -5,6 +5,8 @@
 
 MacroEditLayer* editLayer = nullptr;
 
+// NOTE: onGLFWMouseMoveCallBack is inlined in Geode v5 and can't be hooked.
+// Hover tracking in macro editor is disabled until an alternative is implemented.
 #if 0
 #ifdef GEODE_IS_WINDOWS
 
@@ -21,7 +23,7 @@ class $modify(CCEGLView) {
             return;
 
         editLayer->updateHover(getMousePos());
-
+        
     }
 };
 
@@ -115,7 +117,8 @@ void MacroEditLayer::updateHover(cocos2d::CCPoint pos) {
 }
 
 bool MacroEditLayer::setup() {
-
+    // Utils::setBackgroundColor(m_bgSprite);
+    
     CCMenu* menu = CCMenu::create();
     menu->setID("main-menu");
     m_mainLayer->addChild(menu);
@@ -301,7 +304,7 @@ bool MacroEditLayer::setup() {
     btn = CCMenuItemSpriteExtra::create(spr, this, menu_selector(MacroEditLayer::switchButton));
     btn->setPosition({xPos + 120, yPos - 35});
     selectedInputMenu->addChild(btn);
-
+    
     CCScale9Sprite* bg = CCScale9Sprite::create("square02b_001.png", { 0, 0, 80, 80 });
     bg->setColor({ 0,0,0 });
     bg->setScale(0.3125f);
@@ -333,7 +336,7 @@ bool MacroEditLayer::setup() {
     btn = CCMenuItemSpriteExtra::create(spr, this, menu_selector(MacroEditLayer::switchAction));
     btn->setPosition({xPos + 120, yPos - 66});
     selectedInputMenu->addChild(btn);
-
+    
     bg = CCScale9Sprite::create("square02b_001.png", { 0, 0, 80, 80 });
     bg->setColor({ 0,0,0 });
     bg->setScale(0.3125f);
@@ -405,7 +408,7 @@ bool MacroEditLayer::setup() {
     m_mainLayer->setPosition(m_mainLayer->getPosition() - offset);
     m_closeBtn->setPosition(m_closeBtn->getPosition() + offset);
     m_bgSprite->setPosition(m_bgSprite->getPosition() + offset);
-
+    
     return true;
 }
 
@@ -416,7 +419,7 @@ void MacroEditLayer::loadPage(int page) {
 
     if (pageMenu)
         pageMenu->removeFromParentAndCleanup(true);
-
+    
     pageMenu = CCMenu::create();
     pageMenu->setID("page-menu");
     m_mainLayer->addChild(pageMenu);
@@ -425,7 +428,7 @@ void MacroEditLayer::loadPage(int page) {
 
     bool empty = pageInputs.empty();
 
-    noInputsLabel1->setVisible(empty);
+    noInputsLabel1->setVisible(empty); 
     noInputsLabel2->setVisible(empty);
 
     selectedInputMenu->setVisible(!empty);
@@ -472,7 +475,7 @@ void MacroEditLayer::loadPage(int page) {
         lbl->setPosition({-153, height1});
 
         pageMenu->addChild(lbl);
-
+        
         lbl = CCLabelBMFont::create(inp.frame.c_str(), "chatFont.fnt");
         lbl->setScale(0.55f);
         lbl->setOpacity(218);
@@ -623,8 +626,8 @@ void MacroEditLayer::selectInput(int input) {
 
     selectedInput = input;
     selectedInputIndex = (currentPage - 1) * 6 + input;
-
-    updateLabels();
+    
+    updateLabels();    
     flashSelected();
 }
 
@@ -641,7 +644,7 @@ void MacroEditLayer::reSelectInput() {
 int MacroEditLayer::getSum(CCObject* obj) {
     if (std::string_view(static_cast<CCNode*>(obj)->getID()) == "left")
         return -1;
-
+        
     return 1;
 }
 
@@ -665,14 +668,14 @@ void MacroEditLayer::switchPage(CCObject* obj) {
 
     loadPage(currentPage);
     reSelectInput();
-
+    
     if (empty)
         selectInput(5);
 }
 
 void MacroEditLayer::switchFrame(CCObject* obj) {
     auto input = inputs[selectedInputIndex];
-
+    
     int sum = getSum(obj);
 
     if (input.frame == 0 && sum == -1) return;
@@ -684,9 +687,9 @@ void MacroEditLayer::changeSelectedInputFrame(int frame, bool isArrow) {
     auto input = inputs[selectedInputIndex];
 
     input.frame = frame;
-
+    
     inputs.erase(inputs.begin() + selectedInputIndex);
-
+    
     size_t addedAt = 0;
 
     for (size_t i = 0; i < inputs.size(); i++) {
@@ -723,7 +726,7 @@ void MacroEditLayer::changeSelectedInputFrame(int frame, bool isArrow) {
         if ((input.frame > currentFrame && input.frame <= nextFrame) || nextFrame == -1) {
 
             inputs.insert(inputs.begin() + i + 1, input);
-
+            
             addedAt = i + 1;
 
             break;
@@ -745,11 +748,11 @@ void MacroEditLayer::switchButton(CCObject* obj) {
     int sum = getSum(obj);
 
     auto& input = inputs[selectedInputIndex];
-
+    
     input.button += sum;
 
-    if (input.button == 0) input.button = 3;
-    if (input.button == 4) input.button = 1;
+    if (input.button == 0) input.button = 3;   
+    if (input.button == 4) input.button = 1; 
 
     loadPage(currentPage);
     reSelectInput();
@@ -864,7 +867,7 @@ void MacroEditLayer::onRemoveInput(CCObject*) {
         selectedInputBg->runAction(CCSequence::create(tintTo, tintFrom, nullptr));
         listBg->runAction(CCSequence::create(tintTo, tintFrom, nullptr));
     }
-
+    
     updateSaved();
 }
 
@@ -1014,9 +1017,9 @@ void MacroEditLayer::mergeMacro(std::vector<input> mergeInputs, bool players[2],
             int p = static_cast<int>(element.player2);
             return element.frame >= startFrame[p] && element.frame <= endFrame[p] && players[p];
         };
-
+    
         auto newEnd = std::remove_if(inputs.begin(), inputs.end(), condition);
-
+    
         inputs.erase(newEnd, inputs.end());
     }
 
@@ -1041,6 +1044,6 @@ void MacroEditLayer::mergeMacro(std::vector<input> mergeInputs, bool players[2],
 
         break;
     }
-
+        
     updateSaved();
 }

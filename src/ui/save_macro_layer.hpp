@@ -12,6 +12,7 @@ class SaveMacroLayer : public geode::Popup {
 private:
 
     bool setup() {
+        // Utils::setBackgroundColor(m_bgSprite);
 
         setTitle("Save Macro");
 
@@ -70,7 +71,7 @@ private:
 public:
 
     STATIC_CREATE(SaveMacroLayer, 285, 194)
-
+    
     static void open() {
         if (Global::get().macro.inputs.empty())
             return FLAlertLayer::create("Save Macro", "You can't save an <cl>empty</c> macro.", "Ok")->show();
